@@ -1,6 +1,6 @@
 use revmc::primitives::SpecId;
 use revmc::OptimizationLevel;
-use revmc::{ EvmCompiler, EvmLlvmBackend };
+use revmc::{EvmCompiler, EvmLlvmBackend};
 
 use crate::error::CompilerError;
 
@@ -19,7 +19,7 @@ impl RuntimeAot {
         &self,
         name: &'static str,
         bytecode: &[u8],
-        spec_id: SpecId
+        spec_id: SpecId,
     ) -> Result<(), CompilerError> {
         let _ = color_eyre::install();
 
@@ -28,8 +28,9 @@ impl RuntimeAot {
             &context,
             self.cfg.aot,
             self.cfg.opt_level,
-            &revmc::Target::Native
-        ).map_err(|err| CompilerError::BackendInit {
+            &revmc::Target::Native,
+        )
+        .map_err(|err| CompilerError::BackendInit {
             err: err.to_string(),
         })?;
 
@@ -66,16 +67,20 @@ impl RuntimeAot {
 
         // Compile.
         let obj = module_out_dir.join("a.o");
-        compiler.write_object_to_file(&obj).map_err(|err| CompilerError::FileIO {
-            err: err.to_string(),
-        })?;
+        compiler
+            .write_object_to_file(&obj)
+            .map_err(|err| CompilerError::FileIO {
+                err: err.to_string(),
+            })?;
 
         // Link.
         let so_path = module_out_dir.join("a.so");
         let linker = revmc::Linker::new();
-        linker.link(&so_path, [obj.to_str().unwrap()]).map_err(|err| CompilerError::Link {
-            err: err.to_string(),
-        })?;
+        linker
+            .link(&so_path, [obj.to_str().unwrap()])
+            .map_err(|err| CompilerError::Link {
+                err: err.to_string(),
+            })?;
 
         Ok(())
     }

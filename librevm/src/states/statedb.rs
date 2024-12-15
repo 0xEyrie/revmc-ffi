@@ -1,10 +1,10 @@
-use alloy_primitives::{ Address, BlockHash, Bytes, B256, U256 };
-use revm::primitives::{ Account, AccountInfo, Bytecode, HashMap };
-use revm::{ Database, DatabaseCommit };
+use alloy_primitives::{Address, BlockHash, Bytes, B256, U256};
+use revm::primitives::{Account, AccountInfo, Bytecode, HashMap};
+use revm::{Database, DatabaseCommit};
 
-use crate::error::{ BackendError, GoError };
-use crate::memory::{ U8SliceView, UnmanagedVector };
-use crate::types::{ DeletedAccounts, UpdatedAccounts, UpdatedCodes, UpdatedStorages };
+use crate::error::{BackendError, GoError};
+use crate::memory::{U8SliceView, UnmanagedVector};
+use crate::types::{DeletedAccounts, UpdatedAccounts, UpdatedCodes, UpdatedStorages};
 
 use super::vtable::Db;
 
@@ -25,18 +25,17 @@ impl<'db> Database for StateDB<'db> {
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, BackendError> {
         let mut error_msg = UnmanagedVector::default();
         let mut output = UnmanagedVector::default();
-        let go_error: GoError = (self.db.vtable
-            .get_account)(
-                self.db.state,
-                U8SliceView::new(Some(address.as_slice())),
-                &mut output as *mut UnmanagedVector,
-                &mut error_msg as *mut UnmanagedVector
-            )
-            .into();
+        let go_error: GoError = (self.db.vtable.get_account)(
+            self.db.state,
+            U8SliceView::new(Some(address.as_slice())),
+            &mut output as *mut UnmanagedVector,
+            &mut error_msg as *mut UnmanagedVector,
+        )
+        .into();
         unsafe {
-            go_error.into_result(error_msg, ||
+            go_error.into_result(error_msg, || {
                 "Failed to get account info from the db".to_owned()
-            )?;
+            })?;
         }
         let account_info: AccountInfo = output.try_into().unwrap();
         Ok(Some(account_info))
@@ -46,14 +45,13 @@ impl<'db> Database for StateDB<'db> {
     fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
         let mut error_msg = UnmanagedVector::default();
         let mut output = UnmanagedVector::default();
-        let go_error: GoError = (self.db.vtable
-            .get_code_by_hash)(
-                self.db.state,
-                U8SliceView::new(Some(code_hash.as_slice())),
-                &mut output as *mut UnmanagedVector,
-                &mut error_msg as *mut UnmanagedVector
-            )
-            .into();
+        let go_error: GoError = (self.db.vtable.get_code_by_hash)(
+            self.db.state,
+            U8SliceView::new(Some(code_hash.as_slice())),
+            &mut output as *mut UnmanagedVector,
+            &mut error_msg as *mut UnmanagedVector,
+        )
+        .into();
         unsafe {
             go_error.into_result(error_msg, || "Failed to get code from the db".to_owned())?;
         }
@@ -66,15 +64,14 @@ impl<'db> Database for StateDB<'db> {
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
         let mut error_msg = UnmanagedVector::default();
         let mut output = UnmanagedVector::default();
-        let go_error: GoError = (self.db.vtable
-            .get_storage)(
-                self.db.state,
-                U8SliceView::new(Some(address.as_slice())),
-                U8SliceView::new(Some(&index.to_be_bytes_vec())),
-                &mut output as *mut UnmanagedVector,
-                &mut error_msg as *mut UnmanagedVector
-            )
-            .into();
+        let go_error: GoError = (self.db.vtable.get_storage)(
+            self.db.state,
+            U8SliceView::new(Some(address.as_slice())),
+            U8SliceView::new(Some(&index.to_be_bytes_vec())),
+            &mut output as *mut UnmanagedVector,
+            &mut error_msg as *mut UnmanagedVector,
+        )
+        .into();
         unsafe {
             go_error.into_result(error_msg, || "Failed to get storage from the db".to_owned())?;
         }
@@ -87,17 +84,18 @@ impl<'db> Database for StateDB<'db> {
     fn block_hash(&mut self, number: u64) -> Result<BlockHash, Self::Error> {
         let mut error_msg = UnmanagedVector::default();
         let mut output = UnmanagedVector::default();
-        let go_error: GoError = (self.db.vtable
-            .get_block_hash)(
-                self.db.state,
-                number,
-                &mut output as *mut UnmanagedVector,
-                &mut error_msg as *mut UnmanagedVector
-            )
-            .into();
+        let go_error: GoError = (self.db.vtable.get_block_hash)(
+            self.db.state,
+            number,
+            &mut output as *mut UnmanagedVector,
+            &mut error_msg as *mut UnmanagedVector,
+        )
+        .into();
 
         unsafe {
-            go_error.into_result(error_msg, || "Failed to get block hash from the db".to_owned())?;
+            go_error.into_result(error_msg, || {
+                "Failed to get block hash from the db".to_owned()
+            })?;
         }
 
         let block_hash = BlockHash::from_slice(&output.consume().unwrap());
@@ -127,7 +125,13 @@ impl<'a> DatabaseCommit for StateDB<'a> {
             if is_newly_created && !account.info.is_empty_code_hash() {
                 updated_codes.insert(
                     account.info.code_hash,
-                    account.info.code.clone().unwrap().original_byte_slice().to_vec()
+                    account
+                        .info
+                        .code
+                        .clone()
+                        .unwrap()
+                        .original_byte_slice()
+                        .to_vec(),
                 );
             }
 
@@ -145,21 +149,20 @@ impl<'a> DatabaseCommit for StateDB<'a> {
         }
         // Commited by ffi call in state database
         let mut error_msg = UnmanagedVector::default();
-        let go_error: GoError = (self.db.vtable
-            .commit)(
-                self.db.state,
-                updated_codes.try_into().unwrap(),
-                updated_storages.try_into().unwrap(),
-                updated_accounts.try_into().unwrap(),
-                deleted_accounts.try_into().unwrap(),
-                &mut error_msg as *mut UnmanagedVector
-            )
-            .into();
+        let go_error: GoError = (self.db.vtable.commit)(
+            self.db.state,
+            updated_codes.try_into().unwrap(),
+            updated_storages.try_into().unwrap(),
+            updated_accounts.try_into().unwrap(),
+            deleted_accounts.try_into().unwrap(),
+            &mut error_msg as *mut UnmanagedVector,
+        )
+        .into();
 
         unsafe {
-            let _ = go_error.into_result(error_msg, ||
+            let _ = go_error.into_result(error_msg, || {
                 "Failed to commit changes in the state db".to_owned()
-            );
+            });
         }
     }
 }

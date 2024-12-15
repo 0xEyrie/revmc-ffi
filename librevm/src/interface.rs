@@ -1,13 +1,14 @@
 use crate::{
-    compiler::{ register_handler, CompileWorker, ExternalContext, SledDB },
-    error::{ init_tracer, set_error },
-    memory::{ ByteSliceView, UnmanagedVector },
-    states::{ Db, StateDB },
+    compiler::{register_handler, CompileWorker, ExternalContext, SledDB},
+    error::{init_tracer, set_error},
+    memory::{ByteSliceView, UnmanagedVector},
+    states::{Db, StateDB},
+    types::TryIntoVec,
 };
 use alloy_primitives::B256;
 use once_cell::sync::OnceCell;
-use revm::{ primitives::SpecId, Evm, EvmBuilder };
-use std::sync::{ Arc, RwLock };
+use revm::{primitives::SpecId, Evm, EvmBuilder};
+use std::sync::{Arc, RwLock};
 
 pub static SLED_DB: OnceCell<Arc<RwLock<SledDB<B256>>>> = OnceCell::new();
 
@@ -75,7 +76,7 @@ pub extern "C" fn new_vm(default_spec_id: u8) -> *mut evm_t {
 #[no_mangle]
 pub extern "C" fn new_vm_with_compiler(
     default_spec_id: u8,
-    compiler: *mut compiler_t
+    compiler: *mut compiler_t,
 ) -> *mut evm_t {
     let db = Db::default();
     let state_db = StateDB::new(&db);
@@ -118,7 +119,7 @@ pub extern "C" fn execute_tx(
     db: Db,
     block: ByteSliceView,
     tx: ByteSliceView,
-    errmsg: Option<&mut UnmanagedVector>
+    errmsg: Option<&mut UnmanagedVector>,
 ) -> UnmanagedVector {
     let data = if aot {
         execute::<ExternalContext>(vm_ptr, db, block, tx, errmsg)
@@ -136,7 +137,7 @@ pub extern "C" fn simulate_tx(
     db: Db,
     block: ByteSliceView,
     tx: ByteSliceView,
-    errmsg: Option<&mut UnmanagedVector>
+    errmsg: Option<&mut UnmanagedVector>,
 ) -> UnmanagedVector {
     let data = if aot {
         simulate::<ExternalContext>(vm_ptr, db, block, tx, errmsg)
@@ -152,7 +153,7 @@ fn execute<EXT>(
     db: Db,
     block: ByteSliceView,
     tx: ByteSliceView,
-    errmsg: Option<&mut UnmanagedVector>
+    errmsg: Option<&mut UnmanagedVector>,
 ) -> Vec<u8> {
     let evm = match to_evm::<EXT>(vm_ptr) {
         Some(vm) => vm,
@@ -169,7 +170,7 @@ fn execute<EXT>(
 
     let result = evm.transact_commit();
     match result {
-        Ok(res) => todo!(),
+        Ok(res) => res.try_into_vec().unwrap(),
         Err(err) => {
             set_error(err, errmsg);
             Vec::new()
@@ -182,7 +183,7 @@ fn simulate<EXT>(
     db: Db,
     block: ByteSliceView,
     tx: ByteSliceView,
-    errmsg: Option<&mut UnmanagedVector>
+    errmsg: Option<&mut UnmanagedVector>,
 ) -> Vec<u8> {
     let evm = match to_evm::<EXT>(vm_ptr) {
         Some(vm) => vm,
@@ -199,7 +200,7 @@ fn simulate<EXT>(
     // transact witout verification
     let result = evm.transact_preverified();
     match result {
-        Ok(res) => todo!(),
+        Ok(res) => res.result.try_into_vec().unwrap(),
         Err(err) => {
             set_error(err, errmsg);
             Vec::new()

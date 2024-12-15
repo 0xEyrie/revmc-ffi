@@ -44,17 +44,33 @@ enum SuccessReasonEnum {
 }
 
 message Topic {
-  repeated bytes value = 1;
+  bytes value = 1;
 }
 
 message LogData {
   repeated Topic topics = 1;
-  repeated bytes data = 2;
+  bytes data = 2;
 }
 
 message Log {
-  repeated bytes address = 1;
+  bytes address = 1;
   LogData data = 2;
+}
+
+message Call {
+  bytes call = 1; // Vec<U256>
+}
+
+message Create {
+  bytes create = 1; // Vec<U256>
+  bytes created_address = 2;
+}
+
+message Output {
+  oneof output {
+    Call call = 1;
+    Create create =2;
+  }
 }
 
 message Success {
@@ -62,13 +78,12 @@ message Success {
   uint64 gas_used = 2;
   uint64 gas_refunded = 3;
   repeated Log logs = 4;
-  repeated bytes output = 5;
-  repeated bytes deployed_address = 6;
+  Output output = 5;
 }
 
 message Revert {
   uint64 gas_used = 1;
-  repeated bytes output = 2;
+  bytes output = 2;
 }
 
 message Halt {

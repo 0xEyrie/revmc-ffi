@@ -1,8 +1,8 @@
-use alloy_primitives::{ B256, U256 };
-use prost::{ DecodeError, Message };
+use alloy_primitives::{B256, U256};
+use prost::{DecodeError, Message};
 use revm::primitives::AccountInfo;
 
-use crate::{ memory::UnmanagedVector, v1::types::Account };
+use crate::{memory::UnmanagedVector, v1::types::Account};
 
 impl TryFrom<UnmanagedVector> for AccountInfo {
     type Error = DecodeError;

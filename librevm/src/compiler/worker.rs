@@ -1,9 +1,13 @@
-use std::sync::{ Arc, RwLock };
+use std::sync::{Arc, RwLock};
 
 use alloy_primitives::B256;
 use revmc::primitives::SpecId;
 
-use super::{ aot::{ AotCfg, RuntimeAot }, runtime::get_runtime, SledDB };
+use super::{
+    aot::{AotCfg, RuntimeAot},
+    runtime::get_runtime,
+    SledDB,
+};
 
 fn ivec_to_u64(ivec: &sled::IVec) -> Option<u64> {
     ivec.as_ref().try_into().ok().map(u64::from_be_bytes)

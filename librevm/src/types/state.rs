@@ -1,10 +1,10 @@
-use alloy_primitives::{ Address, B256, U256 };
-use prost::{ EncodeError, Message };
-use revm::primitives::{ AccountInfo, HashMap };
+use alloy_primitives::{Address, B256, U256};
+use prost::{EncodeError, Message};
+use revm::primitives::{AccountInfo, HashMap};
 
 use crate::{
     memory::U8SliceView,
-    v1::types::{ Account, Accounts, Codes, Deleted, Storage, Storages },
+    v1::types::{Account, Accounts, Codes, Deleted, Storage, Storages},
 };
 
 // Updated Accounts
@@ -48,7 +48,7 @@ impl TryFrom<UpdatedCodes> for U8SliceView {
         let codes = Codes {
             codes: value
                 .into_iter()
-                .map(|(hash, code)| { (hash.to_string(), code) })
+                .map(|(hash, code)| (hash.to_string(), code))
                 .collect(),
         };
         // build proto message
@@ -72,14 +72,9 @@ impl TryFrom<UpdatedStorages> for U8SliceView {
                     let addr_str = addr.to_string();
                     let storage = keys
                         .into_iter()
-                        .map(|(key, value)| { (key.to_string(), value.to_be_bytes_vec()) })
+                        .map(|(key, value)| (key.to_string(), value.to_be_bytes_vec()))
                         .collect();
-                    (
-                        addr_str,
-                        Storage {
-                            storage,
-                        },
-                    )
+                    (addr_str, Storage { storage })
                 })
                 .collect(),
         };
@@ -98,10 +93,7 @@ impl TryFrom<DeletedAccounts> for U8SliceView {
 
     fn try_from(value: DeletedAccounts) -> Result<Self, Self::Error> {
         let deleted = Deleted {
-            deleted: value
-                .into_iter()
-                .map(|addr| addr.to_vec())
-                .collect(),
+            deleted: value.into_iter().map(|addr| addr.to_vec()).collect(),
         };
         // build proto message
         let mut buf = Vec::new();

@@ -13,5 +13,5 @@ mod evm {
     }
 }
 
-pub use interface::*;
 pub use evm::*;
+pub use interface::*;

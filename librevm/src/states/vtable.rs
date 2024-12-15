@@ -1,4 +1,4 @@
-use crate::memory::{ U8SliceView, UnmanagedVector };
+use crate::memory::{U8SliceView, UnmanagedVector};
 
 //use crate::{ iterator::GoIter, memory::{ U8SliceView, UnmanagedVector } };
 //
@@ -29,11 +29,11 @@ pub struct Db_vtable {
     /// - `i32`: Status code indicating success or failure.
     pub commit: extern "C" fn(
         *mut db_t,
-        U8SliceView, // codes
-        U8SliceView, // storages
-        U8SliceView, // accounts
-        U8SliceView, // deleted accounts and storages
-        *mut UnmanagedVector // error message output
+        U8SliceView,          // codes
+        U8SliceView,          // storages
+        U8SliceView,          // accounts
+        U8SliceView,          // deleted accounts and storages
+        *mut UnmanagedVector, // error message output
     ) -> i32,
 
     /// Retrieves the account for a given address.
@@ -48,9 +48,9 @@ pub struct Db_vtable {
     /// - `i32`: Status code indicating success or failure.
     pub get_account: extern "C" fn(
         *mut db_t,
-        U8SliceView, // address
+        U8SliceView,          // address
         *mut UnmanagedVector, // result output
-        *mut UnmanagedVector // error message output
+        *mut UnmanagedVector, // error message output
     ) -> i32,
 
     /// Retrieves the code by its hash.
@@ -65,9 +65,9 @@ pub struct Db_vtable {
     /// - `i32`: Status code indicating success or failure.
     pub get_code_by_hash: extern "C" fn(
         *mut db_t,
-        U8SliceView, // code hash
+        U8SliceView,          // code hash
         *mut UnmanagedVector, // result output
-        *mut UnmanagedVector // error message output
+        *mut UnmanagedVector, // error message output
     ) -> i32,
 
     /// Retrieves the storage for a given address and key.
@@ -83,10 +83,10 @@ pub struct Db_vtable {
     /// - `i32`: Status code indicating success or failure.
     pub get_storage: extern "C" fn(
         *mut db_t,
-        U8SliceView, // address
-        U8SliceView, // key
+        U8SliceView,          // address
+        U8SliceView,          // key
         *mut UnmanagedVector, // result output
-        *mut UnmanagedVector // error message output
+        *mut UnmanagedVector, // error message output
     ) -> i32,
 
     /// Retrieves the block hash for a given block number.
@@ -101,9 +101,9 @@ pub struct Db_vtable {
     /// - `i32`: Status code indicating success or failure.
     pub get_block_hash: extern "C" fn(
         *mut db_t,
-        u64, // block number
+        u64,                  // block number
         *mut UnmanagedVector, // result output
-        *mut UnmanagedVector // error message output
+        *mut UnmanagedVector, // error message output
     ) -> i32,
 }
 
@@ -128,7 +128,10 @@ impl Default for Db {
             get_block_hash: default_read_db3,
         };
 
-        Db { state: _state, vtable: _vtable }
+        Db {
+            state: _state,
+            vtable: _vtable,
+        }
     }
 }
 
@@ -138,7 +141,7 @@ extern "C" fn default_write_db(
     _: U8SliceView,
     _: U8SliceView,
     _: U8SliceView,
-    _: *mut UnmanagedVector
+    _: *mut UnmanagedVector,
 ) -> i32 {
     panic!("Default write_db called");
 }
@@ -147,10 +150,9 @@ extern "C" fn default_read_db(
     _: *mut db_t,
     _: U8SliceView,
     _: *mut UnmanagedVector,
-    _: *mut UnmanagedVector
+    _: *mut UnmanagedVector,
 ) -> i32 {
     panic!("Default read_db called");
-
 }
 
 extern "C" fn default_read_db2(
@@ -158,17 +160,16 @@ extern "C" fn default_read_db2(
     _: U8SliceView,
     _: U8SliceView,
     _: *mut UnmanagedVector,
-    _: *mut UnmanagedVector
+    _: *mut UnmanagedVector,
 ) -> i32 {
     panic!("Default read_db called");
-
 }
 
 extern "C" fn default_read_db3(
     _: *mut db_t,
     _: u64,
     _: *mut UnmanagedVector,
-    _: *mut UnmanagedVector
+    _: *mut UnmanagedVector,
 ) -> i32 {
     panic!("Default read_db called");
 }

@@ -1,8 +1,8 @@
-use alloy_primitives::{ Address, B256, U256 };
-use prost::{ DecodeError, Message };
-use revm::primitives::{ BlobExcessGasAndPrice, BlockEnv };
+use alloy_primitives::{Address, B256, U256};
+use prost::{DecodeError, Message};
+use revm::primitives::{BlobExcessGasAndPrice, BlockEnv};
 
-use crate::{ memory::ByteSliceView, v1::types::Block };
+use crate::{memory::ByteSliceView, v1::types::Block};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BlockProto(Block);
@@ -41,19 +41,21 @@ impl TryFrom<BlockProto> for BlockEnv {
                 B256::ZERO => None,
                 _ => Some(prevrandao),
             },
-            blob_excess_gas_and_price: if
-                let Some(blob_excess_gas_and_price) = blob_excess_gas_and_price
+            blob_excess_gas_and_price: if let Some(blob_excess_gas_and_price) =
+                blob_excess_gas_and_price
             {
-                if
-                    blob_excess_gas_and_price.excess_blob_gas == 0 &&
-                    blob_excess_gas_and_price.blob_gasprice.iter().all(|&b| b == 0)
+                if blob_excess_gas_and_price.excess_blob_gas == 0
+                    && blob_excess_gas_and_price
+                        .blob_gasprice
+                        .iter()
+                        .all(|&b| b == 0)
                 {
                     None
                 } else {
                     Some(BlobExcessGasAndPrice {
                         excess_blob_gas: blob_excess_gas_and_price.excess_blob_gas,
                         blob_gasprice: u128::from_be_bytes(
-                            blob_excess_gas_and_price.blob_gasprice.try_into().unwrap()
+                            blob_excess_gas_and_price.blob_gasprice.try_into().unwrap(),
                         ),
                     })
                 }
