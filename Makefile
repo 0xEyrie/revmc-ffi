@@ -29,7 +29,7 @@ lint:
 	@export LLVM_SYS_180_PREFIX=$(shell brew --prefix llvm@18);\
 	cargo fix --allow-dirty
 	@export LLVM_SYS_180_PREFIX=$(shell brew --prefix llvm@18);\
-	cargo clippy --package revmapi --no-deps -- -D warnings
+	cargo clippy
 	make fmt
 	
 fmt:
