@@ -19,6 +19,9 @@ pub enum BackendError {
     // This is the only error case of BackendError that is reported back to the contract.
     #[error("User error during call into backend: {msg}")]
     UserErr { msg: String },
+
+    #[error("Unreachable Call")]
+    UnreachableCall {},
 }
 
 impl BackendError {

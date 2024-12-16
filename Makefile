@@ -27,14 +27,16 @@ endif
 # lint (macos)
 lint:
 	@export LLVM_SYS_180_PREFIX=$(shell brew --prefix llvm@18);\
-	cargo clippy --package revmapi --no-deps -- -D warnings
+	cargo fix --allow-dirty
+	@export LLVM_SYS_180_PREFIX=$(shell brew --prefix llvm@18);\
+	cargo clippy
 	make fmt
 	
 fmt:
 	cargo fmt
 
 update-bindings:
-	cp librevm/bindings.h api
+	cp librevm/bindings.h core
 
 test:
 	make build-rust-debug
@@ -59,7 +61,7 @@ build-rust-debug:
 	export LD_LIBRARY_PATH="/opt/homebrew/lib:$LD_LIBRARY_PATH";\
 	export RUST_BACKTRACE=full; \
 	cargo build
-	@cp -fp target/debug/$(SHARED_LIB_SRC) api/$(SHARED_LIB_DST)
+	@cp -fp target/debug/$(SHARED_LIB_SRC) core/$(SHARED_LIB_DST)
 	@make update-bindings
 
 build-rust-release:
@@ -67,24 +69,24 @@ build-rust-release:
 	export LIBRARY_PATH="/opt/homebrew/lib:$LIBRARY_PATH";\
 	export LD_LIBRARY_PATH="/opt/homebrew/lib:$LD_LIBRARY_PATH";\
 	cargo build --release
-	rm -f api/$(SHARED_LIB_DST)
-	cp -fp target/release/$(SHARED_LIB_SRC) api/$(SHARED_LIB_DST)
+	rm -f core/$(SHARED_LIB_DST)
+	cp -fp target/release/$(SHARED_LIB_SRC) core/$(SHARED_LIB_DST)
 	make update-bindings
 	@ #this pulls out ELF symbols, 80% size reduction!
 
 clean:
 	cargo clean
-	@-rm api/bindings.h
+	@-rm core/bindings.h
 	@-rm librevm/bindings.h
-	@-rm api/$(SHARED_LIB_DST)
+	@-rm core/$(SHARED_LIB_DST)
 	@echo cleaned.
 
 # Creates a release build in a containerized build environment of the shared library for glibc Linux (.so)
 release-build-linux:
 	docker run --rm -v $(shell pwd):/code/ $(BUILDERS_PREFIX)-debian build_gnu_x86_64.sh
 	docker run --rm -v $(shell pwd):/code/ $(BUILDERS_PREFIX)-debian build_gnu_aarch64.sh
-	cp artifacts/librevmapi.x86_64.so api
-	cp artifacts/librevmapi.aarch64.so api
+	cp artifacts/librevmapi.x86_64.so core
+	cp artifacts/librevmapi.aarch64.so core
 	make update-bindings
 
 # Creates a release build in a containerized build environment of the shared library for macOS (.dylib)
@@ -94,7 +96,7 @@ release-build-macos:
 	docker run --rm -u $(USER_ID):$(USER_GROUP) \
 		-v $(shell pwd):/code/ \
 		$(BUILDERS_PREFIX)-cross build_macos.sh
-	cp artifacts/librevmapi.dylib api
+	cp artifacts/librevmapi.dylib core
 	make update-bindings
 
 release-build:
@@ -102,9 +104,8 @@ release-build:
 	make release-build-linux
 	make release-build-macos
 
-flatbuffer-gen:
-	@bash ./scripts/flatbuffer-gen.sh
-	cargo fix --allow-dirty
+protobuf-gen:
+	@bash ./scripts/protobufgen.sh
 	
 contracts-gen:
 	@bash ./scripts/contractsgen.sh

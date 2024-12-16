@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = ["librevm", "types/rust"]
+members = ["librevm"]
 
 [profile.release]
 opt-level = 3
@@ -32,12 +32,12 @@ codegen-units = 16
 [workspace.package]
 version = "0.0.1"
 edition = "2021"
-authors = ["rethmint"]
-keywords = ["cosmos-sdk", "revm", "crypto"]
+authors = ["0xEyrie"]
+keywords = ["ffi", "revm", "crypto", "execute engine"]
 license = "MIT"
 license-file = "LICENSE"
 readme = "README.md"
-repository = "https://github.com/rethmint/revm-api"
+repository = "https://github.com/0xEyrie/revmc-ffi"
 rust-version = "1.81.0"
 
 
@@ -45,7 +45,6 @@ rust-version = "1.81.0"
 bytes = "1.4.0"
 thiserror = "1.0.34"
 errno = "0.3.0"
-flatbuffers = "24.3.25"
 
 # External crate dependencies.
 # Please do not add any test features here: they should be declared by the individual crate.
@@ -58,8 +57,6 @@ serde = { version = "1.0.188", default-features = false, features = [
 	"rc",
 ] }
 serde_json = { version = "1.0.94" }
-serde-generate = { git = "https://github.com/aptos-labs/serde-reflection", rev = "73b6bbf748334b71ff6d7d09d06a29e3062ca075" }
-serde-reflection = { git = "https://github.com/aptos-labs/serde-reflection", rev = "73b6bbf748334b71ff6d7d09d06a29e3062ca075" }
 sha2 = "0.10.8"
 sha3 = "0.10.6"
 smallvec = "1.6.1"
@@ -69,7 +66,10 @@ tsu = "1.0.1"
 parking_lot = "0.12.1"
 base64 = "0.21.7"
 bigdecimal = "0.4"
-bech32 = "0.11"
 triomphe = "0.1.9"
-revm = { git = "https://github.com/rethmint/revm", rev = "bed7673494036cf2bb9d8353c700c0a3f94b06b5" }
-revmc = { git = "https://github.com/rethmint/revmc", rev = "213a7541919c51786227d82a880f385f51a7eee4" }
+revm = { version = "18.0", default-features = false }
+revm-primitives = { version = "14.0", default-features = false }
+revm-interpreter = { version = "14.0", default-features = false }
+revmc = { git = "https://github.com/0xEyrie/revmc", rev = "0d138b6c42ed52b735f6c8604655dc76d15b1efa" }
+prost = "0.11"
+prost-types = "0.11"

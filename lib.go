@@ -1,54 +1,54 @@
-package revm_api
+package revmcffi
 
 import (
-	"github.com/rethmint/revm-api/api"
+	"github.com/0xEyrie/revmc-ffi/core"
 	types "github.com/rethmint/revm-api/types/go"
 )
 
 // VM struct is the core of initiavm.
 type VM struct {
-	Inner api.VM
+	Inner core.VM
 }
 
 type Compiler struct {
-	Inner api.Compiler
+	Inner core.Compiler
 }
 
 func NewCompiler(threshold uint64) Compiler {
-	inner := api.InitCompiler(threshold)
+	inner := core.InitCompiler(threshold)
 	return Compiler{inner}
 }
 
 func (compiler *Compiler) Destroy() {
-	api.ReleaseCompiler(compiler.Inner)
+	core.ReleaseCompiler(compiler.Inner)
 }
 
 // NewVm return VM instance
 // handler
 func NewVM(SPEC_ID uint8) VM {
-	inner := api.InitVM(SPEC_ID)
+	inner := core.NewVM(SPEC_ID)
 
 	return VM{inner}
 }
 
-func NewAotVM(SPEC_ID uint8, compiler Compiler) VM {
-	inner := api.InitAotVM(SPEC_ID, compiler.Inner)
+func NewVMWithCompiler(SPEC_ID uint8, compiler Compiler) VM {
+	inner := core.NewVMWithCompiler(SPEC_ID, compiler.Inner)
 
 	return VM{inner}
 }
 
 func (vm *VM) Destroy() {
-	api.ReleaseVM(vm.Inner)
+	core.ReleaseVM(vm.Inner)
 }
 
 // ExecuteTx execute transaction based on revm
 // for bootstrapping genesis
 func (vm *VM) ExecuteTx(
-	kvStore api.KVStore,
+	kvStore core.KVStore,
 	block types.SerializedBlock,
 	tx types.SerializedTransaction,
 ) (types.ExecutionResult, error) {
-	res, err := api.ExecuteTx(
+	res, err := core.ExecuteTx(
 		vm.Inner,
 		kvStore,
 		&block,
@@ -62,11 +62,11 @@ func (vm *VM) ExecuteTx(
 }
 
 func (vm *VM) QueryTx(
-	kvStore api.KVStore,
+	kvStore core.,
 	block types.SerializedBlock,
 	tx types.SerializedTransaction,
 ) (types.ExecutionResult, error) {
-	res, err := api.QueryTx(
+	res, err := core.QueryTx(
 		vm.Inner,
 		kvStore,
 		&block,

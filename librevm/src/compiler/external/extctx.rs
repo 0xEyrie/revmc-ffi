@@ -3,8 +3,7 @@ use crate::{
     error::ExtError,
 };
 use alloy_primitives::B256;
-use revm::primitives::SpecId;
-use revmc::EvmCompilerFn;
+use revmc::{primitives::SpecId, EvmCompilerFn};
 
 pub struct ExternalContext {
     compile_worker: &'static mut CompileWorker,

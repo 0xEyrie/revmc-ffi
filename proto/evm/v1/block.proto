@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "../types";
+package evm.v1;
+
+message Block {
+    bytes number = 1;
+    bytes coinbase = 2;
+    bytes timestamp = 3;
+    bytes gas_limit = 4;
+    bytes basefee = 5;
+    bytes difficulty = 6;
+    bytes prevrandao = 7;
+    BlobExcessGasAndPrice blob_excess_gas_and_price = 8;
+}
+
+message BlobExcessGasAndPrice {
+    uint64 excess_blob_gas = 1;
+    bytes blob_gasprice = 2;
+}

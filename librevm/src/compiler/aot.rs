@@ -1,4 +1,4 @@
-use revm::primitives::SpecId;
+use revmc::primitives::SpecId;
 use revmc::OptimizationLevel;
 use revmc::{EvmCompiler, EvmLlvmBackend};
 

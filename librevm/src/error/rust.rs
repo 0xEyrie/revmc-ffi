@@ -11,6 +11,7 @@ pub enum ErrnoValue {
     Success = 0,
     Other = 1,
 }
+
 pub fn set_error(err: EVMError<BackendError>, error_msg: Option<&mut UnmanagedVector>) {
     if let Some(error_msg) = error_msg {
         let msg: Vec<u8> = match err {

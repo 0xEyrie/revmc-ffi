@@ -3,7 +3,7 @@ name = "revmapi"
 version = "0.0.1"
 publish = false
 description = "Revm Engine FFI API"
-repository = "https://github.com/rethmint/revm-api"
+repository = "https://github.com/0xEyrie/revmc-ffi"
 exclude = [".gitignore"]
 edition = { workspace = true }
 rust-version = { workspace = true }
@@ -18,8 +18,6 @@ serde = []
 backtraces = []
 
 [dependencies]
-flatbuffer_types = { path = "../types/rust" }
-flatbuffers = { workspace = true }
 errno = { workspace = true }
 bytes = { workspace = true }
 serde = { workspace = true, features = ["derive", "alloc"] }
@@ -40,6 +38,10 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tracing-appender = "0.2.3"
 chrono = "0.4.38"
 chrono-tz = "0.10.0"
+prost.workspace = true
+prost-types.workspace = true
+
 
 [build-dependencies]
 cbindgen = { workspace = true }
+prost-build = "0.13.4"

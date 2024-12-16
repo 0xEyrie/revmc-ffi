@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "../types";
+package evm.v1;
+
+message Account {
+  // Account balance.
+  bytes balance = 1;
+  // Account nonce.
+  uint64 nonce = 2;
+  // Code hash.
+  bytes code_hash = 3;
+}
+
+message Accounts {
+    map<string, Account> accounts = 1; // address => StateAccount
+}
+
+// code_hash => bytecode
+message Codes {
+    map<string, bytes> codes = 1;
+}
+
+// key => value
+message Storage {
+    map<string, bytes> storage = 1;
+}
+
+// address => key => value
+message Storages {
+    map<string, Storage> storages = 1;
+}
+
+
+message Deleted {
+    repeated bytes deleted = 1; // addresses
+}

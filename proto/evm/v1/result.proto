@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+option go_package = "../types";
+package evm.v1;
+
+enum HaltReasonEnum {
+  HALT_REASON_ENUM_UNSPECIFIED_UNSPECIFIED = 0;
+  HALT_REASON_ENUM_OUT_OF_GAS_BASIC = 1;
+  HALT_REASON_ENUM_OUT_OF_GAS_MEMORY_LIMIT = 2;
+  HALT_REASON_ENUM_OUT_OF_GAS_MEMORY = 3;
+  HALT_REASON_ENUM_OUT_OF_GAS_PRECOMPILE = 4;
+  HALT_REASON_ENUM_OUT_OF_GAS_INVALID_OPERAND = 5;
+  HALT_REASON_ENUM_OUT_OF_GAS_REENTRANCY_SENTRY = 6;
+  HALT_REASON_ENUM_OPCODE_NOT_FOUND = 7;
+  HALT_REASON_ENUM_INVALID_FE_OPCODE = 8;
+  HALT_REASON_ENUM_INVALID_JUMP = 9;
+  HALT_REASON_ENUM_NOT_ACTIVATED = 10;
+  HALT_REASON_ENUM_STACK_UNDERFLOW = 11;
+  HALT_REASON_ENUM_STACK_OVERFLOW = 12;
+  HALT_REASON_ENUM_OUT_OF_OFFSET = 13;
+  HALT_REASON_ENUM_CREATE_COLLISION = 14;
+  HALT_REASON_ENUM_PRECOMPILE_ERROR = 15;
+  HALT_REASON_ENUM_NONCE_OVERFLOW = 16;
+  HALT_REASON_ENUM_CREATE_CONTRACT_SIZE_LIMIT = 17;
+  HALT_REASON_ENUM_CREATE_CONTRACT_STARTING_WITH_EF = 18;
+  HALT_REASON_ENUM_CREATE_INIT_CODE_SIZE_LIMIT = 19;
+  HALT_REASON_ENUM_OVERFLOW_PAYMENT = 20;
+  HALT_REASON_ENUM_STATE_CHANGE_DURING_STATIC_CALL = 21;
+  HALT_REASON_ENUM_CALL_NOT_ALLOWED_INSIDE_STATIC = 22;
+  HALT_REASON_ENUM_OUT_OF_FUNDS = 23;
+  HALT_REASON_ENUM_CALL_TOO_DEEP = 24;
+  HALT_REASON_ENUM_EOF_FUNCTION_STACK_OVERFLOW = 25;
+  HALT_REASON_ENUM_INVALID_EXTCALL_TARGET = 26;
+  HALT_REASON_ENUM_EOF_AUX_DATA_OVERFLOW = 27;
+  HALT_REASON_ENUM_EOF_AUX_DATA_TOO_SMALL = 28;
+}
+
+enum SuccessReasonEnum {
+  SUCCESS_REASON_ENUM_UNSPECIFIED = 0;
+  SUCCESS_REASON_ENUM_STOP = 1;
+  SUCCESS_REASON_ENUM_RETURN = 2;
+  SUCCESS_REASON_ENUM_SELF_DESTRUCT = 3;
+  SUCCESS_REASON_ENUM_EOF_RETURN_CONTRACT = 4;
+}
+
+message Topic {
+  bytes value = 1;
+}
+
+message LogData {
+  repeated Topic topics = 1;
+  bytes data = 2;
+}
+
+message Log {
+  bytes address = 1;
+  LogData data = 2;
+}
+
+message Call {
+  bytes call = 1; // Vec<U256>
+}
+
+message Create {
+  bytes create = 1; // Vec<U256>
+  bytes created_address = 2;
+}
+
+message Output {
+  oneof output {
+    Call call = 1;
+    Create create =2;
+  }
+}
+
+message Success {
+  SuccessReasonEnum reason = 1;
+  uint64 gas_used = 2;
+  uint64 gas_refunded = 3;
+  repeated Log logs = 4;
+  Output output = 5;
+}
+
+message Revert {
+  uint64 gas_used = 1;
+  bytes output = 2;
+}
+
+message Halt {
+  HaltReasonEnum reason = 1;
+  uint64 gas_used = 2;
+}
+
+message Error {
+  string message = 1;
+}
+
+message EvmResult {
+  oneof result {
+    Success success = 1;
+    Revert revert = 2;
+    Halt halt = 3;
+    Error error = 4;
+  }
+}

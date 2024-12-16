@@ -18,7 +18,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: librevm-linux-glibc
-          path: api/*.so
+          path: core/*.so
 
   build-macos:
     name: MacOS glibc
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: librevm-macos
-          path: api/*.dylib
+          path: core/*.dylib
 
   release:
     name: Release shared libraries
