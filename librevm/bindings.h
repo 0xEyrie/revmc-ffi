@@ -215,10 +215,6 @@ typedef struct {
   size_t len;
 } ByteSliceView;
 
-typedef struct {
-
-} compiler_t;
-
 void destroy_unmanaged_vector(UnmanagedVector v);
 
 UnmanagedVector execute_tx(evm_t *vm_ptr,
@@ -228,17 +224,13 @@ UnmanagedVector execute_tx(evm_t *vm_ptr,
                            ByteSliceView tx,
                            UnmanagedVector *errmsg);
 
-void free_compiler(compiler_t *compiler);
-
 void free_vm(evm_t *vm, bool aot);
-
-compiler_t *new_compiler(uint64_t threshold);
 
 UnmanagedVector new_unmanaged_vector(bool nil, const uint8_t *ptr, size_t length);
 
 evm_t *new_vm(uint8_t default_spec_id);
 
-evm_t *new_vm_with_compiler(uint8_t default_spec_id, compiler_t *compiler);
+evm_t *new_vm_with_compiler(uint8_t default_spec_id, uint64_t thershold);
 
 UnmanagedVector simulate_tx(evm_t *vm_ptr,
                             bool aot,

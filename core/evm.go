@@ -39,7 +39,7 @@ func NewVMWithCompiler(SPEC_ID uint8, compiler Compiler) EVM {
 	}
 }
 
-// ExecuteTx call ffi(`execute_tx`) to execute
+// ExecuteTx call ffi(`execute_tx`) to execute transaction
 func ExecuteTx(
 	vm EVM,
 	store state.StateDB,
@@ -69,6 +69,7 @@ func ExecuteTx(
 	return decodeEvmResult(res)
 }
 
+// SimulateTx call ffi(`simulate_tx`) to simulate transaction
 func SimulateTx(
 	vm EVM,
 	store state.StateDB,
