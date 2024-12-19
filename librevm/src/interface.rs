@@ -1,13 +1,14 @@
 use crate::{
     error::set_error,
-    memory::{ ByteSliceView, UnmanagedVector },
-    states::{ Db, StateDB },
+    memory::{ByteSliceView, UnmanagedVector},
+    states::{Db, StateDB},
     types::TryIntoVec,
 };
 use alloy_primitives::B256;
 use once_cell::sync::OnceCell;
-use revm::{ primitives::SpecId, Evm, EvmBuilder };
-use std::sync::{ Arc, RwLock };
+use revm::{primitives::SpecId, Evm, EvmBuilder};
+use revmc_worker::{CompileWorker, EXTCompileWorker};
+use std::sync::{Arc, RwLock};
 
 // pub static SLED_DB: OnceCell<Arc<RwLock<SledDB<B256>>>> = OnceCell::new();
 
@@ -79,11 +80,11 @@ pub extern "C" fn new_vm_with_compiler(default_spec_id: u8, thershold: u64) -> *
 
     let evm = {
         let compiler = unsafe { &mut *(compiler as *mut CompileWorker) };
-        let ext = EXTComp::new(compiler);
+        let ext = EXTCompileWorker::new(compiler);
         builder
             .with_db(state_db)
             .with_spec_id(spec)
-            .with_external_context::<ExternalContext>(ext)
+            .with_external_context::<EXTCompileWorker>(ext)
             .append_handler_register(register_handler)
             .build()
     };
@@ -97,7 +98,7 @@ pub extern "C" fn free_vm(vm: *mut evm_t, aot: bool) {
     if !vm.is_null() {
         // this will free cache when it goes out of scope
         if aot {
-            let _ = unsafe { Box::from_raw(vm as *mut Evm<ExternalContext, StateDB>) };
+            let _ = unsafe { Box::from_raw(vm as *mut Evm<EXTCompileWorker, StateDB>) };
         } else {
             let _ = unsafe { Box::from_raw(vm as *mut Evm<(), StateDB>) };
         }
@@ -111,10 +112,10 @@ pub extern "C" fn execute_tx(
     db: Db,
     block: ByteSliceView,
     tx: ByteSliceView,
-    errmsg: Option<&mut UnmanagedVector>
+    errmsg: Option<&mut UnmanagedVector>,
 ) -> UnmanagedVector {
     let data = if aot {
-        execute::<ExternalContext>(vm_ptr, db, block, tx, errmsg)
+        execute::<EXTCompileWorker>(vm_ptr, db, block, tx, errmsg)
     } else {
         execute::<()>(vm_ptr, db, block, tx, errmsg)
     };
@@ -129,10 +130,10 @@ pub extern "C" fn simulate_tx(
     db: Db,
     block: ByteSliceView,
     tx: ByteSliceView,
-    errmsg: Option<&mut UnmanagedVector>
+    errmsg: Option<&mut UnmanagedVector>,
 ) -> UnmanagedVector {
     let data = if aot {
-        simulate::<ExternalContext>(vm_ptr, db, block, tx, errmsg)
+        simulate::<EXTCompileWorker>(vm_ptr, db, block, tx, errmsg)
     } else {
         simulate::<()>(vm_ptr, db, block, tx, errmsg)
     };
@@ -145,7 +146,7 @@ fn execute<EXT>(
     db: Db,
     block: ByteSliceView,
     tx: ByteSliceView,
-    errmsg: Option<&mut UnmanagedVector>
+    errmsg: Option<&mut UnmanagedVector>,
 ) -> Vec<u8> {
     let evm = match to_evm::<EXT>(vm_ptr) {
         Some(vm) => vm,
@@ -175,7 +176,7 @@ fn simulate<EXT>(
     db: Db,
     block: ByteSliceView,
     tx: ByteSliceView,
-    errmsg: Option<&mut UnmanagedVector>
+    errmsg: Option<&mut UnmanagedVector>,
 ) -> Vec<u8> {
     let evm = match to_evm::<EXT>(vm_ptr) {
         Some(vm) => vm,
