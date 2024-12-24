@@ -76,7 +76,8 @@ jobs:
           cargo fmt --all
 
       - name: Clippy
-        run: |
-          cargo clippy
+        run: cargo clippy --workspace --all-targets
+        env:
+          RUSTFLAGS: -Dwarnings
 
     

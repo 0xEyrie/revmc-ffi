@@ -4,48 +4,12 @@ use crate::{
     states::{Db, StateDB},
     types::TryIntoVec,
 };
-use alloy_primitives::B256;
-use once_cell::sync::OnceCell;
 use revm::{primitives::SpecId, Evm, EvmBuilder};
-use revmc_worker::{CompileWorker, EXTCompileWorker};
-use std::sync::{Arc, RwLock};
-
-// pub static SLED_DB: OnceCell<Arc<RwLock<SledDB<B256>>>> = OnceCell::new();
-
-// #[allow(non_camel_case_types)]
-// #[repr(C)]
-// pub struct compiler_t {}
-
-// pub fn to_compiler(ptr: *mut compiler_t) -> Option<&'static mut CompileWorker> {
-//     if ptr.is_null() {
-//         None
-//     } else {
-//         let compiler = unsafe { &mut *(ptr as *mut CompileWorker) };
-//         Some(compiler)
-//     }
-// }
-
-// #[no_mangle]
-// pub extern "C" fn new_compiler(threshold: u64) -> *mut compiler_t {
-//     let rt = tokio::runtime::Runtime::new().unwrap();
-//     rt.block_on(async {
-//         let sled_db = SLED_DB.get_or_init(|| Arc::new(RwLock::new(SledDB::init())));
-//         let compiler = CompileWorker::new(threshold, Arc::clone(sled_db));
-//         let compiler = Box::into_raw(Box::new(compiler));
-//         compiler as *mut compiler_t
-//     })
-// }
-
-// #[no_mangle]
-// pub extern "C" fn free_compiler(compiler: *mut compiler_t) {
-//     if !compiler.is_null() {
-//         // this will free cache when it goes out of scope
-//         let _ = unsafe { Box::from_raw(compiler as *mut CompileWorker) };
-//     }
-// }
+use revmc_worker::{register_handler, EXTCompileWorker};
 
 // byte slice view: golang data type
-// unamangedvector: ffi safe vector data type compliants with rust's ownership and data types, for returning optional error value
+// unamangedvector: ffi safe vector data type compliants with rust's ownership and data types, for
+// returning optional error value
 #[allow(non_camel_case_types)]
 #[repr(C)]
 pub struct evm_t {}
@@ -72,15 +36,18 @@ pub extern "C" fn new_vm(default_spec_id: u8) -> *mut evm_t {
 }
 
 #[no_mangle]
-pub extern "C" fn new_vm_with_compiler(default_spec_id: u8, thershold: u64) -> *mut evm_t {
+pub extern "C" fn new_vm_with_compiler(
+    default_spec_id: u8,
+    thershold: u64,
+    max_concurrent_size: usize,
+) -> *mut evm_t {
     let db = Db::default();
     let state_db = StateDB::new(&db);
     let spec = SpecId::try_from_u8(default_spec_id).unwrap_or(SpecId::OSAKA);
     let builder = EvmBuilder::default();
 
     let evm = {
-        let compiler = unsafe { &mut *(compiler as *mut CompileWorker) };
-        let ext = EXTCompileWorker::new(compiler);
+        let ext = EXTCompileWorker::new(thershold, max_concurrent_size);
         builder
             .with_db(state_db)
             .with_spec_id(spec)

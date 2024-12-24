@@ -29,14 +29,14 @@ lint:
 	@export LLVM_SYS_180_PREFIX=$(shell brew --prefix llvm@18);\
 	cargo fix --allow-dirty
 	@export LLVM_SYS_180_PREFIX=$(shell brew --prefix llvm@18);\
-	cargo clippy
+	cargo clippy --workspace --all-targets --all-features -- -D warnings
 	make fmt
 	
 fmt:
-	cargo fmt
+	rustup run nightly cargo fmt
 
 update-bindings:
-	cp librevm/bindings.h core
+	cp librevm/bindings.h core/revm
 
 test:
 	make build-rust-debug
@@ -61,7 +61,7 @@ build-rust-debug:
 	export LD_LIBRARY_PATH="/opt/homebrew/lib:$LD_LIBRARY_PATH";\
 	export RUST_BACKTRACE=full; \
 	cargo build
-	@cp -fp target/debug/$(SHARED_LIB_SRC) core/$(SHARED_LIB_DST)
+	@cp -fp target/debug/$(SHARED_LIB_SRC) core/revm/$(SHARED_LIB_DST)
 	@make update-bindings
 
 build-rust-release:
@@ -69,16 +69,16 @@ build-rust-release:
 	export LIBRARY_PATH="/opt/homebrew/lib:$LIBRARY_PATH";\
 	export LD_LIBRARY_PATH="/opt/homebrew/lib:$LD_LIBRARY_PATH";\
 	cargo build --release
-	rm -f core/$(SHARED_LIB_DST)
-	cp -fp target/release/$(SHARED_LIB_SRC) core/$(SHARED_LIB_DST)
+	rm -f core/revm/$(SHARED_LIB_DST)
+	cp -fp target/release/$(SHARED_LIB_SRC) core/revm/$(SHARED_LIB_DST)
 	make update-bindings
 	@ #this pulls out ELF symbols, 80% size reduction!
 
 clean:
 	cargo clean
-	@-rm core/bindings.h
+	@-rm core/revm/bindings.h
 	@-rm librevm/bindings.h
-	@-rm core/$(SHARED_LIB_DST)
+	@-rm core/revm/$(SHARED_LIB_DST)
 	@echo cleaned.
 
 # Creates a release build in a containerized build environment of the shared library for glibc Linux (.so)

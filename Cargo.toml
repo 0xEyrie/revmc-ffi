@@ -70,8 +70,7 @@ triomphe = "0.1.9"
 revm = { version = "18.0", default-features = false }
 revm-primitives = { version = "14.0", default-features = false }
 revm-interpreter = { version = "14.0", default-features = false }
-revmc = { git = "https://github.com/0xEyrie/revmc", rev = "46be216", default-features = false }
-revmc-worker = { git = "https://github.com/0xEyrie/revmc", rev = "10679c4", default-features = false }
+revmc = { git = "https://github.com/0xEyrie/revmc", rev = "e9d454c6388121a9f0bdd0ad5708a2abc09e8ff2", default-features = false }
+revmc-worker = { git = "https://github.com/0xEyrie/revmc", rev = "e9d454c6388121a9f0bdd0ad5708a2abc09e8ff2", default-features = false }
 prost = "0.11"
 prost-types = "0.11"
-

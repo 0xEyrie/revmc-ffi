@@ -42,7 +42,8 @@ enum GoError {
    */
   GoError_CannotSerialize = 3,
   /**
-   * An error happened during normal operation of a Go callback, which should be fed back to the contract
+   * An error happened during normal operation of a Go callback, which should be fed back to the
+   * contract
    */
   GoError_User = 4,
   /**
@@ -50,7 +51,8 @@ enum GoError {
    */
   GoError_Unimplemented = 5,
   /**
-   * An error type that should never be created by us. It only serves as a fallback for the i32 to GoError conversion.
+   * An error type that should never be created by us. It only serves as a fallback for the i32
+   * to GoError conversion.
    */
   GoError_Other = -1,
 };
@@ -77,19 +79,19 @@ typedef int32_t GoError;
  *
  * ### Transfer ownership from Rust to Go
  *
- * When an `UnmanagedVector` was created in Rust using [`UnmanagedVector::new`], [`UnmanagedVector::default`]
- * or [`new_unmanaged_vector`], it can be passted to Go as a return value.
- * Rust then has no chance to destroy the vector anymore, so ownership is transferred to Go.
- * In Go, the data has to be copied to a garbage collected `[]byte`. Then the vector must be destroyed
- * using [`destroy_unmanaged_vector`].
+ * When an `UnmanagedVector` was created in Rust using [`UnmanagedVector::new`],
+ * [`UnmanagedVector::default`] or [`new_unmanaged_vector`], it can be passted to Go as a return
+ * value. Rust then has no chance to destroy the vector anymore, so ownership is transferred to Go.
+ * In Go, the data has to be copied to a garbage collected `[]byte`. Then the vector must be
+ * destroyed using [`destroy_unmanaged_vector`].
  *
  * ### Transfer ownership from Go to Rust
  *
- * When Rust code calls into Go (using the vtable methods), return data or error messages must be created
- * in Go. This is done by calling [`new_unmanaged_vector`] from Go, which copies data into a newly created
- * `UnmanagedVector`. Since Go created it, it owns it. The ownership is then passed to Rust via the
- * mutable return value pointers. On the Rust side, the vector is destroyed using [`UnmanagedVector::consume`].
- *
+ * When Rust code calls into Go (using the vtable methods), return data or error messages must be
+ * created in Go. This is done by calling [`new_unmanaged_vector`] from Go, which copies data into
+ * a newly created `UnmanagedVector`. Since Go created it, it owns it. The ownership is then passed
+ * to Rust via the mutable return value pointers. On the Rust side, the vector is destroyed using
+ * [`UnmanagedVector::consume`].
  */
 typedef struct {
   /**
@@ -129,11 +131,16 @@ typedef struct {
    *
    * # Parameters
    * - `db_t`: A mutable pointer to the database.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the codes will be stored.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the storages will be stored.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the accounts will be stored.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the deleted accounts will be stored.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will be stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the codes will be
+   *   stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the storages will be
+   *   stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the accounts will be
+   *   stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the deleted accounts
+   *   will be stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will
+   *   be stored.
    *
    * # Returns
    * - `i32`: Status code indicating success or failure.
@@ -145,8 +152,10 @@ typedef struct {
    * # Parameters
    * - `db_t`: A mutable pointer to the database.
    * - `U8SliceView`: The address for which the account is being retrieved.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be stored.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will be stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be
+   *   stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will
+   *   be stored.
    *
    * # Returns
    * - `i32`: Status code indicating success or failure.
@@ -158,8 +167,10 @@ typedef struct {
    * # Parameters
    * - `db_t`: A mutable pointer to the database.
    * - `U8SliceView`: The code hash for which the code is being retrieved.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be stored.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will be stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be
+   *   stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will
+   *   be stored.
    *
    * # Returns
    * - `i32`: Status code indicating success or failure.
@@ -172,8 +183,10 @@ typedef struct {
    * - `db_t`: A mutable pointer to the database.
    * - `U8SliceView`: The address for which the storage is being retrieved.
    * - `U8SliceView`: The key for which the storage is being retrieved.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be stored.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will be stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be
+   *   stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will
+   *   be stored.
    *
    * # Returns
    * - `i32`: Status code indicating success or failure.
@@ -185,8 +198,10 @@ typedef struct {
    * # Parameters
    * - `db_t`: A mutable pointer to the database.
    * - `u64`: The block number for which the block hash is being retrieved.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be stored.
-   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will be stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be
+   *   stored.
+   * - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will
+   *   be stored.
    *
    * # Returns
    * - `i32`: Status code indicating success or failure.
@@ -204,20 +219,18 @@ typedef struct {
  * Use this for the current call only. A view cannot be copied for safety reasons.
  * If you need a copy, use [`ByteSliceView::to_owned`].
  *
- * Go's nil value is fully supported, such that we can differentiate between nil and an empty slice.
+ * Go's nil value is fully supported, such that we can differentiate between nil and an empty
+ * slice.
  */
 typedef struct {
   /**
-   * True if and only if the byte slice is nil in Go. If this is true, the other fields must be ignored.
+   * True if and only if the byte slice is nil in Go. If this is true, the other fields must be
+   * ignored.
    */
   bool is_nil;
   const uint8_t *ptr;
   size_t len;
 } ByteSliceView;
-
-typedef struct {
-
-} compiler_t;
 
 void destroy_unmanaged_vector(UnmanagedVector v);
 
@@ -228,17 +241,15 @@ UnmanagedVector execute_tx(evm_t *vm_ptr,
                            ByteSliceView tx,
                            UnmanagedVector *errmsg);
 
-void free_compiler(compiler_t *compiler);
-
 void free_vm(evm_t *vm, bool aot);
-
-compiler_t *new_compiler(uint64_t threshold);
 
 UnmanagedVector new_unmanaged_vector(bool nil, const uint8_t *ptr, size_t length);
 
 evm_t *new_vm(uint8_t default_spec_id);
 
-evm_t *new_vm_with_compiler(uint8_t default_spec_id, compiler_t *compiler);
+evm_t *new_vm_with_compiler(uint8_t default_spec_id,
+                            uint64_t thershold,
+                            size_t max_concurrent_size);
 
 UnmanagedVector simulate_tx(evm_t *vm_ptr,
                             bool aot,

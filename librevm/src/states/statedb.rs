@@ -1,10 +1,14 @@
 use alloy_primitives::{Address, BlockHash, Bytes, B256, U256};
-use revm::primitives::{Account, AccountInfo, Bytecode, HashMap};
-use revm::{Database, DatabaseCommit};
+use revm::{
+    primitives::{Account, AccountInfo, Bytecode, HashMap},
+    Database, DatabaseCommit,
+};
 
-use crate::error::{BackendError, GoError};
-use crate::memory::{U8SliceView, UnmanagedVector};
-use crate::types::{Code, DeletedAccounts, UpdatedAccounts, UpdatedCodes, UpdatedStorages};
+use crate::{
+    error::{BackendError, GoError},
+    memory::{U8SliceView, UnmanagedVector},
+    types::{DeletedAccounts, UpdatedAccounts, UpdatedCodes, UpdatedStorages},
+};
 
 use super::vtable::Db;
 
@@ -104,10 +108,10 @@ impl<'db> Database for StateDB<'db> {
 impl<'a> DatabaseCommit for StateDB<'a> {
     #[doc = " Commit changes to the database."]
     fn commit(&mut self, changes: HashMap<Address, Account>) {
-        let mut updated_codes: UpdatedCodes = HashMap::new();
-        let mut updated_storages: UpdatedStorages = HashMap::new();
-        let mut updated_accounts: UpdatedAccounts = HashMap::new();
-        let mut deleted_accounts: DeletedAccounts = Vec::new();
+        let mut updated_codes: UpdatedCodes = HashMap::default();
+        let mut updated_storages: UpdatedStorages = HashMap::default();
+        let mut updated_accounts: UpdatedAccounts = HashMap::default();
+        let mut deleted_accounts: DeletedAccounts = Vec::default();
 
         for (address, account) in changes {
             if !account.is_touched() {
@@ -131,7 +135,7 @@ impl<'a> DatabaseCommit for StateDB<'a> {
             updated_accounts.insert(address, account.clone().info.copy_without_code());
 
             // Update Storages
-            let mut updated_storages_by_address = HashMap::new();
+            let mut updated_storages_by_address = HashMap::default();
             for (key, evm_storage_slot) in account.storage {
                 if evm_storage_slot.original_value != evm_storage_slot.present_value {
                     updated_storages_by_address.insert(key, evm_storage_slot.present_value);

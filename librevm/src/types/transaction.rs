@@ -129,8 +129,6 @@ impl TryFrom<ByteSliceView> for TxEnv {
     type Error = DecodeError;
     fn try_from(value: ByteSliceView) -> Result<Self, Self::Error> {
         let tx_bytes = value.read().unwrap();
-        Ok(TxEnv::from(TransactionProto::from(
-            Transaction::decode(tx_bytes).unwrap(),
-        )))
+        Ok(TxEnv::from(TransactionProto::from(Transaction::decode(tx_bytes).unwrap())))
     }
 }

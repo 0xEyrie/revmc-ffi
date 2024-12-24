@@ -1,6 +1,6 @@
 //go:build darwin
 
-package core
+package revm
 
 // #cgo LDFLAGS: -Wl,-rpath,${SRCDIR} -L${SRCDIR} -lrevmapi
 import "C"

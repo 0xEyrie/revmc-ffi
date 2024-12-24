@@ -29,11 +29,10 @@ pub fn set_error(err: EVMError<BackendError>, error_msg: Option<&mut UnmanagedVe
                     b"Call gas cost is more than gas limit".to_vec()
                 }
                 InvalidTransaction::RejectCallerWithCode => b"Caller rejected with code".to_vec(),
-                InvalidTransaction::LackOfFundForMaxFee { fee, balance } => format!(
-                    "Lack of fund for max fee: fee = {}, balance = {}",
-                    fee, balance
-                )
-                .into_bytes(),
+                InvalidTransaction::LackOfFundForMaxFee { fee, balance } => {
+                    format!("Lack of fund for max fee: fee = {}, balance = {}", fee, balance)
+                        .into_bytes()
+                }
                 InvalidTransaction::OverflowPaymentInTransaction => {
                     b"Overflow payment in transaction".to_vec()
                 }

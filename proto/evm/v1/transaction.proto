@@ -16,7 +16,7 @@ message Transaction {
     bytes caller = 1; // 20 bytes
     uint64 gas_limit = 2;
     bytes gas_price = 3; // 32 bytes
-    uint64 nonce = 4;
+    optional uint64 nonce = 4;
     bytes transact_to = 5; // 20 bytes
     bytes value = 6; // 32 bytes
     bytes data = 7;

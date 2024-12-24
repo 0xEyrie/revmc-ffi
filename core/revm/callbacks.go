@@ -1,4 +1,4 @@
-package core
+package revm
 
 // Check https://akrennmair.github.io/golang-cgo-slides/ to learn
 // how this embedded C code works.
@@ -26,8 +26,6 @@ import (
 	"log"
 	"runtime/debug"
 	"unsafe"
-
-	"github.com/0xEyrie/revmc-ffi/state"
 )
 
 // Note: we have to include all exports in the same file (at least since they both import bindings.h),
@@ -60,13 +58,13 @@ var db_vtable = C.Db_vtable{
 }
 
 type DBState struct {
-	State state.StateDB
+	State StateDB
 }
 
 // use this to create C.Db in two steps, so the pointer lives as long as the calling stack
 //
 //	// then pass db into some FFI function
-func buildDBState(state state.StateDB) DBState {
+func buildDBState(state StateDB) DBState {
 	return DBState{
 		State: state,
 	}
@@ -93,7 +91,7 @@ func cCommit(ptr *C.db_t, codes C.U8SliceView, storages C.U8SliceView, accounts 
 		panic("Got a non-none UnmanagedVector we're about to override. This is a bug because someone has to drop the old one.")
 	}
 
-	statedb := *(*state.StateDB)(unsafe.Pointer(ptr))
+	statedb := *(*StateDB)(unsafe.Pointer(ptr))
 	v0 := copyU8Slice(codes)
 	v1 := copyU8Slice(storages)
 	v2 := copyU8Slice(accounts)
@@ -116,7 +114,7 @@ func cGetAccount(ptr *C.db_t, address C.U8SliceView, account *C.UnmanagedVector,
 		panic("Got a non-none UnmanagedVector we're about to override. This is a bug because someone has to drop the old one.")
 	}
 
-	statedb := *(*state.StateDB)(unsafe.Pointer(ptr))
+	statedb := *(*StateDB)(unsafe.Pointer(ptr))
 	addr := copyU8Slice(address)
 	v := statedb.GetAccount(addr)
 
@@ -139,7 +137,7 @@ func cGetCodeByHash(ptr *C.db_t, codeHash C.U8SliceView, code *C.UnmanagedVector
 		panic("Got a non-none UnmanagedVector we're about to override. This is a bug because someone has to drop the old one.")
 	}
 
-	statedb := *(*state.StateDB)(unsafe.Pointer(ptr))
+	statedb := *(*StateDB)(unsafe.Pointer(ptr))
 	k := copyU8Slice(codeHash)
 	v := statedb.GetCodeByHash(k)
 
@@ -160,7 +158,7 @@ func cGetStorage(ptr *C.db_t, address C.U8SliceView, storageKey C.U8SliceView, s
 		panic("Got a non-none UnmanagedVector we're about to override. This is a bug because someone has to drop the old one.")
 	}
 
-	statedb := *(*state.StateDB)(unsafe.Pointer(ptr))
+	statedb := *(*StateDB)(unsafe.Pointer(ptr))
 	addr := copyU8Slice(address)
 	sk := copyU8Slice(storageKey)
 	v := statedb.GetStorage(addr, sk)
@@ -182,7 +180,7 @@ func cGetBlockHash(ptr *C.db_t, blockNumber C.uint64_t, blockHash *C.UnmanagedVe
 		panic("Got a non-none UnmanagedVector we're about to override. This is a bug because someone has to drop the old one.")
 	}
 
-	statedb := *(*state.StateDB)(unsafe.Pointer(ptr))
+	statedb := *(*StateDB)(unsafe.Pointer(ptr))
 	bh := statedb.GetBlockHash(uint64(blockNumber))
 
 	*blockHash = newUnmanagedVector(bh)
