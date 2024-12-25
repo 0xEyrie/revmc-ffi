@@ -1,8 +1,8 @@
-use alloy_primitives::{ Address, B256, U256 };
-use prost::{ DecodeError, Message };
-use revm::primitives::{ BlobExcessGasAndPrice, BlockEnv };
+use alloy_primitives::{Address, B256, U256};
+use prost::{DecodeError, Message};
+use revm::primitives::{BlobExcessGasAndPrice, BlockEnv};
 
-use crate::{ memory::ByteSliceView, v1::types::Block };
+use crate::{memory::ByteSliceView, v1::types::Block};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BlockProto(Block);

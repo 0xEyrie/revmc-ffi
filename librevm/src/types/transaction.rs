@@ -38,7 +38,7 @@ impl From<TransactionProto> for TxEnv {
             caller: Address::from_slice(&transaction.caller),
             gas_limit: transaction.gas_limit,
             gas_price: U256::from_be_slice(&transaction.gas_price),
-            nonce: Some(transaction.nonce),
+            nonce: transaction.nonce,
             transact_to: match transact_to {
                 Address::ZERO => TxKind::Create,
                 _ => TxKind::Call(transact_to),
