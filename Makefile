@@ -27,7 +27,7 @@ endif
 # lint (macos)
 lint:
 	@export LLVM_SYS_180_PREFIX=$(shell brew --prefix llvm@18);\
-	cargo fix --allow-dirty
+	cargo fix --allow-staged
 	@export LLVM_SYS_180_PREFIX=$(shell brew --prefix llvm@18);\
 	cargo clippy --workspace --all-targets --all-features -- -D warnings
 	make fmt

@@ -1,0 +1,7 @@
+repos:
+  - repo: local
+    hooks:
+      - id: lint
+        name: apply lint
+        entry: make lint
+        language: system
