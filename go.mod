@@ -1,10 +1,8 @@
-module github.com/0xEyrie/revmc-ffi
+module github.com/0xEyrie/revmcffi
 
 go 1.22.0
 
 toolchain go1.23.3
-
-replace github.com/0xEyrie/revmc-ffi => ./
 
 replace github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.14.6-0.20241211100559-c7e740f40ca9
 
