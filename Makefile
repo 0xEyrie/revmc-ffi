@@ -34,6 +34,7 @@ lint:
 	
 fmt:
 	rustup run nightly cargo fmt
+	go fmt
 
 update-bindings:
 	cp librevm/bindings.h core/revm
