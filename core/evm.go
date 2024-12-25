@@ -91,7 +91,7 @@ func (evm *EVM) Execute(
 		Caller:         caller.Address().Bytes(),
 		GasLimit:       msg.GasLimit,
 		GasPrice:       msg.GasPrice.Bytes(),
-		Nonce:          msg.Nonce,
+		Nonce:          nil,
 		TransactTo:     msg.To.Bytes(),
 		Value:          msg.Value.Bytes(),
 		Data:           msg.Data,

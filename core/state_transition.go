@@ -1,3 +1,5 @@
+package core
+
 // Copyright 2014 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
@@ -13,8 +15,6 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
-
-package core
 
 import (
 	"fmt"
@@ -67,12 +67,10 @@ func ApplyMessage(evm *EVM, msg *gethcore.Message, gp *gethcore.GasPool) (*gethc
 //  5. Run Script section
 //  6. Derive new state root
 type stateTransition struct {
-	gp           *gethcore.GasPool
-	msg          *gethcore.Message
-	gasRemaining uint64
-	initialGas   uint64
-	state        revm.StateDB
-	evm          *EVM
+	gp    *gethcore.GasPool
+	msg   *gethcore.Message
+	state revm.StateDB
+	evm   *EVM
 }
 
 // newStateTransition initialises and returns a new state transition object.
@@ -83,14 +81,6 @@ func newStateTransition(evm *EVM, msg *gethcore.Message, gp *gethcore.GasPool) *
 		msg:   msg,
 		state: evm.Inner.StateDB,
 	}
-}
-
-// to returns the recipient of the message.
-func (st *stateTransition) to() common.Address {
-	if st.msg == nil || st.msg.To == nil /* contract creation */ {
-		return common.Address{}
-	}
-	return *st.msg.To
 }
 
 func (st *stateTransition) buyGas() error {
