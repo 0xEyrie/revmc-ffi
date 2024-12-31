@@ -34,7 +34,6 @@ pub struct Db_vtable {
     /// - `i32`: Status code indicating success or failure.
     pub commit: extern "C" fn(
         *mut db_t,
-        U8SliceView,          // codes
         U8SliceView,          // storages
         U8SliceView,          // accounts
         U8SliceView,          // deleted accounts and storages
@@ -147,7 +146,6 @@ impl Default for Db {
 
 extern "C" fn default_write_db(
     _: *mut db_t,
-    _: U8SliceView,
     _: U8SliceView,
     _: U8SliceView,
     _: U8SliceView,

@@ -1,4 +1,4 @@
-package revm
+package vm
 
 // SpecId represents the different Ethereum hard fork specifications
 type SpecId uint8

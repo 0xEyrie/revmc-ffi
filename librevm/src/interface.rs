@@ -52,7 +52,7 @@ pub extern "C" fn new_vm_with_compiler(
             .with_db(state_db)
             .with_spec_id(spec)
             .with_external_context::<EXTCompileWorker>(ext)
-            .append_handler_register(register_handler)
+            .append_handler_register(register_handler::<StateDB>)
             .build()
     };
 

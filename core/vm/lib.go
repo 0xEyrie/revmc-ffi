@@ -1,4 +1,4 @@
-package revm
+package vm
 
 // #include <stdlib.h>
 // #include "bindings.h"

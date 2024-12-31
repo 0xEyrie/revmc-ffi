@@ -1,4 +1,4 @@
-package revm
+package vm
 
 // Check https://akrennmair.github.io/golang-cgo-slides/ to learn
 // how this embedded C code works.
@@ -26,6 +26,8 @@ import (
 	"log"
 	"runtime/debug"
 	"unsafe"
+
+	state "github.com/0xEyrie/revmffi/core/state"
 )
 
 // Note: we have to include all exports in the same file (at least since they both import bindings.h),
@@ -58,13 +60,13 @@ var db_vtable = C.Db_vtable{
 }
 
 type DBState struct {
-	State StateDB
+	State state.ExtendedStateDB
 }
 
 // use this to create C.Db in two steps, so the pointer lives as long as the calling stack
 //
 //	// then pass db into some FFI function
-func buildDBState(state StateDB) DBState {
+func buildDBState(state state.ExtendedStateDB) DBState {
 	return DBState{
 		State: state,
 	}
@@ -80,7 +82,7 @@ func buildDB(state *DBState) C.Db {
 }
 
 //export cCommit
-func cCommit(ptr *C.db_t, codes C.U8SliceView, storages C.U8SliceView, accounts C.U8SliceView, deletedAccounts C.U8SliceView, errOut *C.UnmanagedVector) (ret C.GoError) {
+func cCommit(ptr *C.db_t, storages C.U8SliceView, accounts C.U8SliceView, deletedAccounts C.U8SliceView, errOut *C.UnmanagedVector) (ret C.GoError) {
 	defer recoverPanic(&ret)
 
 	if ptr == nil || errOut == nil {
@@ -91,19 +93,18 @@ func cCommit(ptr *C.db_t, codes C.U8SliceView, storages C.U8SliceView, accounts 
 		panic("Got a non-none UnmanagedVector we're about to override. This is a bug because someone has to drop the old one.")
 	}
 
-	statedb := *(*StateDB)(unsafe.Pointer(ptr))
-	v0 := copyU8Slice(codes)
-	v1 := copyU8Slice(storages)
-	v2 := copyU8Slice(accounts)
-	v3 := copyU8Slice(deletedAccounts)
+	statedb := *(*state.ExtendedStateDB)(unsafe.Pointer(ptr))
+	v0 := copyU8Slice(storages)
+	v1 := copyU8Slice(accounts)
+	v2 := copyU8Slice(deletedAccounts)
 
-	statedb.Commit(v0, v1, v2, v3)
+	statedb.UpdateAndCommit(v0, v1, v2)
 
 	return C.GoError_None
 }
 
-//export cGetAccount
-func cGetAccount(ptr *C.db_t, address C.U8SliceView, account *C.UnmanagedVector, errOut *C.UnmanagedVector) (ret C.GoError) {
+//export cBasic
+func cBasic(ptr *C.db_t, address C.U8SliceView, account *C.UnmanagedVector, errOut *C.UnmanagedVector) (ret C.GoError) {
 	defer recoverPanic(&ret)
 
 	if ptr == nil || account == nil || errOut == nil {
@@ -114,9 +115,9 @@ func cGetAccount(ptr *C.db_t, address C.U8SliceView, account *C.UnmanagedVector,
 		panic("Got a non-none UnmanagedVector we're about to override. This is a bug because someone has to drop the old one.")
 	}
 
-	statedb := *(*StateDB)(unsafe.Pointer(ptr))
+	statedb := *(*state.ExtendedStateDB)(unsafe.Pointer(ptr))
 	addr := copyU8Slice(address)
-	v := statedb.GetAccount(addr)
+	v := statedb.Basic(addr)
 
 	// v will equal nil when the key is missing
 	// https://github.com/cosmos/cosmos-sdk/blob/1083fa948e347135861f88e07ec76b0314296832/store/types/store.go#L174
@@ -137,7 +138,7 @@ func cGetCodeByHash(ptr *C.db_t, codeHash C.U8SliceView, code *C.UnmanagedVector
 		panic("Got a non-none UnmanagedVector we're about to override. This is a bug because someone has to drop the old one.")
 	}
 
-	statedb := *(*StateDB)(unsafe.Pointer(ptr))
+	statedb := *(*state.ExtendedStateDB)(unsafe.Pointer(ptr))
 	k := copyU8Slice(codeHash)
 	v := statedb.GetCodeByHash(k)
 
@@ -158,7 +159,7 @@ func cGetStorage(ptr *C.db_t, address C.U8SliceView, storageKey C.U8SliceView, s
 		panic("Got a non-none UnmanagedVector we're about to override. This is a bug because someone has to drop the old one.")
 	}
 
-	statedb := *(*StateDB)(unsafe.Pointer(ptr))
+	statedb := *(*state.ExtendedStateDB)(unsafe.Pointer(ptr))
 	addr := copyU8Slice(address)
 	sk := copyU8Slice(storageKey)
 	v := statedb.GetStorage(addr, sk)
@@ -180,7 +181,7 @@ func cGetBlockHash(ptr *C.db_t, blockNumber C.uint64_t, blockHash *C.UnmanagedVe
 		panic("Got a non-none UnmanagedVector we're about to override. This is a bug because someone has to drop the old one.")
 	}
 
-	statedb := *(*StateDB)(unsafe.Pointer(ptr))
+	statedb := *(*state.ExtendedStateDB)(unsafe.Pointer(ptr))
 	bh := statedb.GetBlockHash(uint64(blockNumber))
 
 	*blockHash = newUnmanagedVector(bh)

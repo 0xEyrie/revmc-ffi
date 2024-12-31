@@ -7,7 +7,7 @@ use revm::{
 use crate::{
     error::{BackendError, GoError},
     memory::{U8SliceView, UnmanagedVector},
-    types::{DeletedAccounts, UpdatedAccounts, UpdatedCodes, UpdatedStorages},
+    types::{DeletedAccounts, UpdatedAccounts, UpdatedStorages},
 };
 
 use super::vtable::Db;
@@ -22,7 +22,7 @@ impl<'r> StateDB<'r> {
     }
 }
 
-impl<'db> Database for StateDB<'db> {
+impl Database for StateDB<'_> {
     type Error = BackendError;
 
     #[doc = " Get basic account information."]
@@ -105,10 +105,9 @@ impl<'db> Database for StateDB<'db> {
     }
 }
 
-impl<'a> DatabaseCommit for StateDB<'a> {
+impl DatabaseCommit for StateDB<'_> {
     #[doc = " Commit changes to the database."]
     fn commit(&mut self, changes: HashMap<Address, Account>) {
-        let mut updated_codes: UpdatedCodes = HashMap::default();
         let mut updated_storages: UpdatedStorages = HashMap::default();
         let mut updated_accounts: UpdatedAccounts = HashMap::default();
         let mut deleted_accounts: DeletedAccounts = Vec::default();
@@ -122,17 +121,12 @@ impl<'a> DatabaseCommit for StateDB<'a> {
                 deleted_accounts.push(address);
                 continue;
             }
-            let is_newly_created = account.is_created();
-            // Update Codes
-            if is_newly_created && !account.info.is_empty_code_hash() {
-                updated_codes.insert(
-                    account.info.code_hash,
-                    account.info.code.clone().unwrap().original_byte_slice().to_vec(),
-                );
+            let mut info = account.clone().info;
+            if info.code.is_none() {
+                info.code = Some(self.code_by_hash(info.code_hash).unwrap());
             }
-
             // Update Accounts
-            updated_accounts.insert(address, account.clone().info.copy_without_code());
+            updated_accounts.insert(address, info);
 
             // Update Storages
             let mut updated_storages_by_address = HashMap::default();
@@ -143,11 +137,10 @@ impl<'a> DatabaseCommit for StateDB<'a> {
             }
             updated_storages.insert(address, updated_storages_by_address);
         }
-        // Commited by ffi call in state database
+        // Commited by ffi call in extended state database
         let mut error_msg = UnmanagedVector::default();
         let go_error: GoError = (self.db.vtable.commit)(
             self.db.state,
-            updated_codes.try_into().unwrap(),
             updated_storages.try_into().unwrap(),
             updated_accounts.try_into().unwrap(),
             deleted_accounts.try_into().unwrap(),

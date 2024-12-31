@@ -1,4 +1,4 @@
-package revmffi
+package vmffi
 
 import (
 	"context"

@@ -3,11 +3,12 @@ package core
 import (
 	"math/big"
 
-	"github.com/0xEyrie/revmc-ffi/core/revm"
-	"github.com/0xEyrie/revmc-ffi/types"
+	"github.com/0xEyrie/revmffi/core/state"
+	revmtypes "github.com/0xEyrie/revmffi/core/types"
+	revm "github.com/0xEyrie/revmffi/core/vm"
 	"github.com/ethereum/go-ethereum/common"
-	gethcore "github.com/ethereum/go-ethereum/core"
-	gethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"google.golang.org/protobuf/proto"
 )
@@ -15,9 +16,7 @@ import (
 type Config struct {
 	spec revm.SpecId
 
-	NoBaseFee bool
-	// TODO: Tracer
-	// Compiler Setting
+	NoBaseFee         bool
 	hasCompiler       bool
 	thershold         uint64
 	maxConcurrentSize uint
@@ -27,19 +26,18 @@ type Config struct {
 type EVM struct {
 	Inner   revm.EVM
 	Context vm.BlockContext
-	// virtual machine configuration options used to initialise the
-	// evm.
+	// virtual machine configuration options used to initialise the evm.
 	Config Config
 	vm.TxContext
 }
 
 // NewVM return VM instance
-func NewEVM(blockCtx vm.BlockContext, statedb revm.StateDB, config Config) EVM {
+func NewEVM(blockCtx vm.BlockContext, statedb state.ExtendedStateDB, config Config) EVM {
 	var inner revm.EVM
 	if config.hasCompiler {
-		inner = revm.NewVMWithCompiler(statedb, config.thershold, config.maxConcurrentSize, config.spec)
+		inner = revm.NewEVMWithCompiler(statedb, config.thershold, config.maxConcurrentSize, config.spec)
 	} else {
-		inner = revm.NewVM(statedb, config.spec)
+		inner = revm.NewEVM(statedb, config.spec)
 	}
 
 	return EVM{
@@ -61,19 +59,25 @@ func (evm *EVM) Destroy() {
 	revm.DestroyVM(evm.Inner)
 }
 
-func (evm *EVM) SetGetHashFn(hashFn vm.GetHashFunc) {
-	evm.Inner.StateDB.SetGetBlockHash(hashFn)
+func (evm *EVM) SetBlockHashFn(hashFn vm.GetHashFunc) {
+	evm.Inner.StateDB.SetBlockHashFn(hashFn)
+}
+
+func (evm *EVM) SetBlockNumber(number uint64) {
+	evm.Inner.StateDB.SetBlockNumber(number)
 }
 
 // Call execute transaction based on revm
 // this function only support entry call of transactions
 func (evm *EVM) Execute(
-	caller vm.ContractRef, msg *gethcore.Message,
-) (*types.EvmResult, error) {
+	caller vm.ContractRef, msg *core.Message,
+) (*revmtypes.EvmResult, error) {
 	// save block context on evm
 	excessBlobGas := evm.Context.BlobBaseFee.Uint64()
-	block := &types.Block{
-		Number:        evm.Context.BlockNumber.Bytes(),
+	number := evm.Context.BlockNumber
+	evm.SetBlockNumber(number.Uint64())
+	block := &revmtypes.Block{
+		Number:        number.Bytes(),
 		Coinbase:      evm.Context.Coinbase.Bytes(),
 		Timestamp:     big.NewInt(int64(evm.Context.Time)).Bytes(),
 		GasLimit:      big.NewInt(int64(evm.Context.GasLimit)).Bytes(),
@@ -87,7 +91,7 @@ func (evm *EVM) Execute(
 	if err != nil {
 		return nil, err
 	}
-	transaction := types.Transaction{
+	transaction := revmtypes.Transaction{
 		Caller:         caller.Address().Bytes(),
 		GasLimit:       msg.GasLimit,
 		GasPrice:       msg.GasPrice.Bytes(),
@@ -96,14 +100,14 @@ func (evm *EVM) Execute(
 		Value:          msg.Value.Bytes(),
 		Data:           msg.Data,
 		GasPriorityFee: msg.GasTipCap.Bytes(),
-		AccessList: func(accl gethtypes.AccessList) []*types.AccessListItem {
-			result := make([]*types.AccessListItem, len(accl))
+		AccessList: func(accl types.AccessList) []*revmtypes.AccessListItem {
+			result := make([]*revmtypes.AccessListItem, len(accl))
 			for i, acc := range accl {
-				storageKeys := make([]*types.StorageKey, len(acc.StorageKeys))
+				storageKeys := make([]*revmtypes.StorageKey, len(acc.StorageKeys))
 				for j, key := range acc.StorageKeys {
-					storageKeys[j] = &types.StorageKey{Value: key.Bytes()}
+					storageKeys[j] = &revmtypes.StorageKey{Value: key.Bytes()}
 				}
-				result[i] = &types.AccessListItem{
+				result[i] = &revmtypes.AccessListItem{
 					Address:     acc.Address.Bytes(),
 					StorageKeys: storageKeys,
 				}
@@ -135,34 +139,3 @@ func (evm *EVM) Execute(
 	}
 	return res, nil
 }
-
-// // StaticCall execute transaction based on revm
-// // this function only supports entry StaticCall of transactions
-// func (evm *EVM) StaticCall(
-// 	caller vm.ContractRef,
-// 	addr common.Address, input []byte, gas uint64,
-// ) (ret []byte, leftOverGas uint64, err error) {
-// 	// save block context on evm
-// 	excessBlobGas := evm.Context.BlobBaseFee.Uint64()
-// 	blockProto := &types.Block{
-// 		Number:        evm.Context.BlockNumber.Bytes(),
-// 		Coinbase:      evm.Context.Coinbase.Bytes(),
-// 		Timestamp:     big.NewInt(int64(evm.Context.Time)).Bytes(),
-// 		GasLimit:      big.NewInt(int64(evm.Context.GasLimit)).Bytes(),
-// 		Basefee:       evm.Context.BaseFee.Bytes(),
-// 		Difficulty:    evm.Context.Difficulty.Bytes(),
-// 		Prevrandao:    evm.Context.Random[:],
-// 		ExcessBlobGas: &excessBlobGas,
-// 	}
-
-// 	// save tx context on evm
-// 	res, err := evm.Inner.Simulate(
-// 		blockProto,
-// 		&tx,
-// 	)
-// 	if err != nil {
-// 		return nil, gas, err
-// 	}
-
-// 	return res, nil
-// }

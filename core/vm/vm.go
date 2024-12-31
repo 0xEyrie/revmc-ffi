@@ -1,4 +1,4 @@
-package revm
+package vm
 
 // #include <stdlib.h>
 // #include "bindings.h"
@@ -8,14 +8,15 @@ import (
 	"runtime"
 	"syscall"
 
-	revmtypes "github.com/0xEyrie/revmc-ffi/types"
+	"github.com/0xEyrie/revmffi/core/state"
+	"github.com/0xEyrie/revmffi/core/types"
 	"google.golang.org/protobuf/proto"
 )
 
 // EVM represents an Ethereum Virtual Machine instance
 type EVM struct {
 	evm_ptr     *C.evm_t
-	StateDB     StateDB
+	StateDB     state.ExtendedStateDB
 	hasCompiler bool
 }
 
@@ -24,8 +25,8 @@ func DestroyVM(vm EVM) {
 	C.free_vm(vm.evm_ptr, C.bool(vm.hasCompiler))
 }
 
-// NewVM initializes a new VM instance
-func NewVM(statedb StateDB, spec SpecId) EVM {
+// NewEVM initializes a new VM instance
+func NewEVM(statedb state.ExtendedStateDB, spec SpecId) EVM {
 	return EVM{
 		evm_ptr:     C.new_vm(cu8(spec)),
 		StateDB:     statedb,
@@ -33,8 +34,8 @@ func NewVM(statedb StateDB, spec SpecId) EVM {
 	}
 }
 
-// NewVMWithCompiler initializes a new VM instance with AOT compiler
-func NewVMWithCompiler(statedb StateDB, thershold uint64, maxConcurrentSize uint, spec SpecId) EVM {
+// NewEVMWithCompiler initializes a new VM instance with AOT compiler
+func NewEVMWithCompiler(statedb state.ExtendedStateDB, thershold uint64, maxConcurrentSize uint, spec SpecId) EVM {
 	return EVM{
 		evm_ptr:     C.new_vm_with_compiler(cu8(spec), cu64(thershold), cusize(maxConcurrentSize)),
 		StateDB:     statedb,
@@ -42,13 +43,13 @@ func NewVMWithCompiler(statedb StateDB, thershold uint64, maxConcurrentSize uint
 	}
 }
 
-// ExecuteTx executes a transaction on the VM
-func (vm *EVM) Execute(
+// `Execute` executes a transaction on the VM
+func (evm *EVM) Execute(
 	block *[]byte,
 	tx *[]byte,
-) (*revmtypes.EvmResult, error) {
+) (*types.EvmResult, error) {
 	var err error
-	dbState := buildDBState(vm.StateDB)
+	dbState := buildDBState(evm.StateDB)
 	db := buildDB(&dbState)
 
 	blockBytesSliceView := makeView(*block)
@@ -57,26 +58,26 @@ func (vm *EVM) Execute(
 	defer runtime.KeepAlive(txByteSliceView)
 
 	errmsg := uninitializedUnmanagedVector()
-	res, err := C.execute_tx(vm.evm_ptr, C.bool(vm.hasCompiler), db, blockBytesSliceView, txByteSliceView, &errmsg)
+	res, err := C.execute_tx(evm.evm_ptr, C.bool(evm.hasCompiler), db, blockBytesSliceView, txByteSliceView, &errmsg)
 	if err != nil && err.(syscall.Errno) != C.Success {
 		// ignore the opereation times out error
 		errno, ok := err.(syscall.Errno)
 		if ok && errno == syscall.ETIMEDOUT || errno == syscall.ENOENT {
 			return unmarshalEvmResult(res)
 		}
-		return &revmtypes.EvmResult{}, errorWithMessage(err, errmsg)
+		return &types.EvmResult{}, errorWithMessage(err, errmsg)
 	}
 
 	return unmarshalEvmResult(res)
 }
 
-// SimulateTx simulates a transaction on the VM
-func (vm *EVM) simulate(
+// `Simulate` simulates a transaction on the VM
+func (evm *EVM) simulate(
 	block *[]byte,
 	tx *[]byte,
-) (*revmtypes.EvmResult, error) {
+) (*types.EvmResult, error) {
 	var err error
-	dbState := buildDBState(vm.StateDB)
+	dbState := buildDBState(evm.StateDB)
 	db := buildDB(&dbState)
 
 	blockBytesSliceView := makeView(*block)
@@ -85,23 +86,23 @@ func (vm *EVM) simulate(
 	defer runtime.KeepAlive(txByteSliceView)
 
 	errmsg := uninitializedUnmanagedVector()
-	res, err := C.simulate_tx(vm.evm_ptr, C.bool(vm.hasCompiler), db, blockBytesSliceView, txByteSliceView, &errmsg)
+	res, err := C.simulate_tx(evm.evm_ptr, C.bool(evm.hasCompiler), db, blockBytesSliceView, txByteSliceView, &errmsg)
 	if err != nil && err.(syscall.Errno) != C.Success {
 		// ignore the operation timed out error
 		errno, ok := err.(syscall.Errno)
 		if ok && errno == syscall.ETIMEDOUT || errno == syscall.ENOENT {
 			return unmarshalEvmResult(res)
 		}
-		return &revmtypes.EvmResult{}, errorWithMessage(err, errmsg)
+		return &types.EvmResult{}, errorWithMessage(err, errmsg)
 	}
 
 	return unmarshalEvmResult(res)
 }
 
 // unmarshalEvmResult decodes the EVM result from the unmanaged vector
-func unmarshalEvmResult(res C.UnmanagedVector) (*revmtypes.EvmResult, error) {
+func unmarshalEvmResult(res C.UnmanagedVector) (*types.EvmResult, error) {
 	vec := copyAndDestroyUnmanagedVector(res)
-	var result revmtypes.EvmResult
+	var result types.EvmResult
 	err := proto.Unmarshal(vec, &result)
 	if err != nil {
 		return nil, err
