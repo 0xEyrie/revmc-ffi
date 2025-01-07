@@ -3,10 +3,10 @@ name = "revmapi"
 version = "0.0.1"
 publish = false
 description = "Revm Engine FFI API"
-repository = "https://github.com/0xEyrie/revmc-ffi"
+repository = "https://github.com/0xEyrie/revmffi"
 exclude = [".gitignore"]
-edition = { workspace = true }
-rust-version = { workspace = true }
+edition.workspace = true
+rust-version.workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -18,16 +18,15 @@ serde = []
 backtraces = []
 
 [dependencies]
-errno = { workspace = true }
-bytes = { workspace = true }
+errno.workspace = true
+bytes.workspace = true
 serde = { workspace = true, features = ["derive", "alloc"] }
-serde_json = { workspace = true }
-thiserror = { workspace = true }
-alloy-primitives = { version = "0.8.2", default-features = false, features = [
-	"rlp",
-] }
-revm = { workspace = true }
-revmc = { workspace = true }
+serde_json.workspace = true
+thiserror.workspace = true
+alloy-primitives = { version = "0.8.2", default-features = true }
+revm.workspace = true
+revmc.workspace = true
+revmc-worker.workspace = true
 color-eyre = "0.6"
 tokio = { version = "1.41.1", features = ["full"] }
 once_cell = "1.20.2"
@@ -43,5 +42,5 @@ prost-types.workspace = true
 
 
 [build-dependencies]
-cbindgen = { workspace = true }
+cbindgen.workspace = true
 prost-build = "0.13.4"

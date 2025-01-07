@@ -27,7 +27,6 @@ impl TryFrom<BlockProto> for BlockEnv {
     type Error = Vec<u8>;
     fn try_from(block: BlockProto) -> Result<Self, Self::Error> {
         let block = block.into_inner();
-        let blob_excess_gas_and_price = block.blob_excess_gas_and_price;
         let prevrandao = B256::from_slice(&block.prevrandao);
         let number = U256::from_be_slice(&block.number);
         Ok(Self {
@@ -41,23 +40,11 @@ impl TryFrom<BlockProto> for BlockEnv {
                 B256::ZERO => None,
                 _ => Some(prevrandao),
             },
-            blob_excess_gas_and_price: if let Some(blob_excess_gas_and_price) =
-                blob_excess_gas_and_price
-            {
-                if blob_excess_gas_and_price.excess_blob_gas == 0
-                    && blob_excess_gas_and_price
-                        .blob_gasprice
-                        .iter()
-                        .all(|&b| b == 0)
-                {
+            blob_excess_gas_and_price: if let Some(excess_blob_gas) = block.excess_blob_gas {
+                if excess_blob_gas == 0 {
                     None
                 } else {
-                    Some(BlobExcessGasAndPrice {
-                        excess_blob_gas: blob_excess_gas_and_price.excess_blob_gas,
-                        blob_gasprice: u128::from_be_bytes(
-                            blob_excess_gas_and_price.blob_gasprice.try_into().unwrap(),
-                        ),
-                    })
+                    Some(BlobExcessGasAndPrice::new(excess_blob_gas))
                 }
             } else {
                 None

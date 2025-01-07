@@ -1,4 +1,3 @@
-mod compiler;
 mod error;
 mod interface;
 mod memory;

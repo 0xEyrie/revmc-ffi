@@ -37,7 +37,7 @@ keywords = ["ffi", "revm", "crypto", "execute engine"]
 license = "MIT"
 license-file = "LICENSE"
 readme = "README.md"
-repository = "https://github.com/0xEyrie/revmc-ffi"
+repository = "https://github.com/0xEyrie/revmffi"
 rust-version = "1.81.0"
 
 
@@ -70,6 +70,7 @@ triomphe = "0.1.9"
 revm = { version = "18.0", default-features = false }
 revm-primitives = { version = "14.0", default-features = false }
 revm-interpreter = { version = "14.0", default-features = false }
-revmc = { git = "https://github.com/0xEyrie/revmc", rev = "0d138b6c42ed52b735f6c8604655dc76d15b1efa" }
+revmc = { git = "https://github.com/0xEyrie/revmc", rev = "e9d454c6388121a9f0bdd0ad5708a2abc09e8ff2", default-features = false }
+revmc-worker = { git = "https://github.com/0xEyrie/revmc", rev = "e9d454c6388121a9f0bdd0ad5708a2abc09e8ff2", default-features = false }
 prost = "0.11"
 prost-types = "0.11"

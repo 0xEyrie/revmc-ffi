@@ -1,123 +1,141 @@
 package core
 
-// #include <stdlib.h>
-// #include "bindings.h"
-import "C"
-
 import (
-	"runtime"
-	"syscall"
+	"math/big"
 
-	"github.com/0xEyrie/revmc-ffi/state"
-	revmtypes "github.com/0xEyrie/revmc-ffi/types"
+	"github.com/0xEyrie/revmffi/core/state"
+	revmtypes "github.com/0xEyrie/revmffi/core/types"
+	revm "github.com/0xEyrie/revmffi/core/vm"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"google.golang.org/protobuf/proto"
 )
 
+type Config struct {
+	spec revm.SpecId
+
+	NoBaseFee         bool
+	hasCompiler       bool
+	thershold         uint64
+	maxConcurrentSize uint
+}
+
+// VM struct is the core of initiavm.
 type EVM struct {
-	evm_ptr *C.evm_t
-	aot     bool
+	Inner   revm.EVM
+	Context vm.BlockContext
+	// virtual machine configuration options used to initialise the evm.
+	Config Config
+	vm.TxContext
 }
 
-// DestroyVM call ffi(`release_vm`) to release vm instance
-func DestroyVM(vm EVM) {
-	C.free_vm(vm.evm_ptr, C.bool(vm.aot))
-}
+// NewVM return VM instance
+func NewEVM(blockCtx vm.BlockContext, statedb state.ExtendedStateDB, config Config) EVM {
+	var inner revm.EVM
+	if config.hasCompiler {
+		inner = revm.NewEVMWithCompiler(statedb, config.thershold, config.maxConcurrentSize, config.spec)
+	} else {
+		inner = revm.NewEVM(statedb, config.spec)
+	}
 
-// NewVM call ffi(`init_vm`) to initialize vm instance
-func NewVM(SPEC_ID uint8) EVM {
 	return EVM{
-		evm_ptr: C.new_vm(cu8(SPEC_ID)),
-		aot:     false,
+		Inner:   inner,
+		Context: blockCtx,
+		Config:  config,
 	}
 }
 
-// NewVMWithCompiler call ffi(`init_aot_vm`) to initialize vm instance
-func NewVMWithCompiler(SPEC_ID uint8, compiler Compiler) EVM {
-	return EVM{
-		evm_ptr: C.new_vm_with_compiler(cu8(SPEC_ID), compiler.ptr),
-		aot:     true,
-	}
+func (evm *EVM) GetSpecId() revm.SpecId {
+	return evm.Config.spec
 }
 
-// ExecuteTx call ffi(`execute_tx`) to execute
-func ExecuteTx(
-	vm EVM,
-	store state.StateDB,
-	block *[]byte,
-	tx *[]byte,
+func (evm *EVM) SetTxContext(txCtx vm.TxContext) {
+	evm.TxContext = txCtx
+}
+
+func (evm *EVM) Destroy() {
+	revm.DestroyVM(evm.Inner)
+}
+
+func (evm *EVM) SetBlockHashFn(hashFn vm.GetHashFunc) {
+	evm.Inner.StateDB.SetBlockHashFn(hashFn)
+}
+
+func (evm *EVM) SetBlockNumber(number uint64) {
+	evm.Inner.StateDB.SetBlockNumber(number)
+}
+
+// Call execute transaction based on revm
+// this function only support entry call of transactions
+func (evm *EVM) Execute(
+	caller vm.ContractRef, msg *core.Message,
 ) (*revmtypes.EvmResult, error) {
-	var err error
-
-	dbState := buildDBState(store)
-	db := buildDB(&dbState)
-	blockBytesSliceView := makeView(*block)
-	defer runtime.KeepAlive(blockBytesSliceView)
-	txByteSliceView := makeView(*tx)
-	defer runtime.KeepAlive(txByteSliceView)
-
-	errmsg := uninitializedUnmanagedVector()
-	res, err := C.execute_tx(vm.evm_ptr, C.bool(vm.aot), db, blockBytesSliceView, txByteSliceView, &errmsg)
-	if err != nil && err.(syscall.Errno) != C.Success {
-		// ignore the opereation times out error
-		errno, ok := err.(syscall.Errno)
-		if ok && errno == syscall.ETIMEDOUT || errno == syscall.ENOENT {
-			return decodeEvmResult(res)
-		}
-		return &revmtypes.EvmResult{}, errorWithMessage(err, errmsg)
+	// save block context on evm
+	excessBlobGas := evm.Context.BlobBaseFee.Uint64()
+	number := evm.Context.BlockNumber
+	evm.SetBlockNumber(number.Uint64())
+	block := &revmtypes.Block{
+		Number:        number.Bytes(),
+		Coinbase:      evm.Context.Coinbase.Bytes(),
+		Timestamp:     big.NewInt(int64(evm.Context.Time)).Bytes(),
+		GasLimit:      big.NewInt(int64(evm.Context.GasLimit)).Bytes(),
+		Basefee:       evm.Context.BaseFee.Bytes(),
+		Difficulty:    evm.Context.Difficulty.Bytes(),
+		Prevrandao:    evm.Context.Random[:],
+		ExcessBlobGas: &excessBlobGas,
 	}
 
-	return decodeEvmResult(res)
-}
-
-func SimulateTx(
-	vm EVM,
-	store state.StateDB,
-	block *[]byte,
-	tx *[]byte,
-) (*revmtypes.EvmResult, error) {
-	var err error
-
-	dbState := buildDBState(store)
-	db := buildDB(&dbState)
-	blockBytesSliceView := makeView(*block)
-	defer runtime.KeepAlive(blockBytesSliceView)
-	txByteSliceView := makeView(*tx)
-	defer runtime.KeepAlive(txByteSliceView)
-
-	errmsg := uninitializedUnmanagedVector()
-	res, err := C.simulate_tx(vm.evm_ptr, C.bool(vm.aot), db, blockBytesSliceView, txByteSliceView, &errmsg)
-	if err != nil && err.(syscall.Errno) != C.Success {
-		// ignore the operation timed out error
-		errno, ok := err.(syscall.Errno)
-		if ok && errno == syscall.ETIMEDOUT || errno == syscall.ENOENT {
-			return decodeEvmResult(res)
-		}
-		return &revmtypes.EvmResult{}, errorWithMessage(err, errmsg)
-	}
-
-	return decodeEvmResult(res)
-}
-
-type Compiler struct {
-	ptr *C.compiler_t
-}
-
-func ReleaseCompiler(compiler Compiler) {
-	C.free_compiler(compiler.ptr)
-}
-
-func InitCompiler(threshold uint64) Compiler {
-	return Compiler{
-		ptr: C.new_compiler(C.uint64_t(threshold)),
-	}
-}
-
-func decodeEvmResult(res C.UnmanagedVector) (*revmtypes.EvmResult, error) {
-	vec := copyAndDestroyUnmanagedVector(res)
-	var result revmtypes.EvmResult
-	err := proto.Unmarshal(vec, &result)
+	blockBuf, err := proto.Marshal(block)
 	if err != nil {
 		return nil, err
 	}
-	return &result, nil
+	transaction := revmtypes.Transaction{
+		Caller:         caller.Address().Bytes(),
+		GasLimit:       msg.GasLimit,
+		GasPrice:       msg.GasPrice.Bytes(),
+		Nonce:          nil,
+		TransactTo:     msg.To.Bytes(),
+		Value:          msg.Value.Bytes(),
+		Data:           msg.Data,
+		GasPriorityFee: msg.GasTipCap.Bytes(),
+		AccessList: func(accl types.AccessList) []*revmtypes.AccessListItem {
+			result := make([]*revmtypes.AccessListItem, len(accl))
+			for i, acc := range accl {
+				storageKeys := make([]*revmtypes.StorageKey, len(acc.StorageKeys))
+				for j, key := range acc.StorageKeys {
+					storageKeys[j] = &revmtypes.StorageKey{Value: key.Bytes()}
+				}
+				result[i] = &revmtypes.AccessListItem{
+					Address:     acc.Address.Bytes(),
+					StorageKeys: storageKeys,
+				}
+			}
+			return result
+		}(msg.AccessList),
+		BlobHashes: func(hashes []common.Hash) [][]byte {
+			result := make([][]byte, len(hashes))
+			for i, hash := range hashes {
+				result[i] = hash.Bytes()
+			}
+			return result
+		}(msg.BlobHashes),
+		MaxFeePerBlobGas:  msg.BlobGasFeeCap.Bytes(),
+		AuthorizationList: nil,
+	}
+
+	txBuf, err := proto.Marshal(&transaction)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := evm.Inner.Execute(
+		&blockBuf,
+		&txBuf,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }

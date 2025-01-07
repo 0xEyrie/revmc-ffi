@@ -11,10 +11,5 @@ message Block {
     bytes basefee = 5;
     bytes difficulty = 6;
     bytes prevrandao = 7;
-    BlobExcessGasAndPrice blob_excess_gas_and_price = 8;
-}
-
-message BlobExcessGasAndPrice {
-    uint64 excess_blob_gas = 1;
-    bytes blob_gasprice = 2;
+    optional uint64 excess_blob_gas = 8;
 }

@@ -1,5 +1,4 @@
-use std::fmt::Debug;
-use std::string::FromUtf8Error;
+use std::{fmt::Debug, string::FromUtf8Error};
 
 use thiserror::Error;
 

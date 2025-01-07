@@ -1,14 +1,14 @@
-use alloy_primitives::{Address, B256, U256};
+use alloy_primitives::{map::AddressHashMap, Address, U256};
 use prost::{EncodeError, Message};
 use revm::primitives::{AccountInfo, HashMap};
 
 use crate::{
     memory::U8SliceView,
-    v1::types::{Account, Accounts, Codes, Deleted, Storage, Storages},
+    v1::types::{Account, Accounts, Deleted, Storage, Storages},
 };
 
 // Updated Accounts
-pub type UpdatedAccounts = HashMap<Address, AccountInfo>;
+pub type UpdatedAccounts = AddressHashMap<AccountInfo>;
 
 impl TryFrom<UpdatedAccounts> for U8SliceView {
     type Error = EncodeError;
@@ -25,6 +25,10 @@ impl TryFrom<UpdatedAccounts> for U8SliceView {
                             balance: acc.balance.to_be_bytes_vec(),
                             nonce: acc.nonce,
                             code_hash: acc.code_hash.to_vec(),
+                            code: match acc.code {
+                                Some(code) => code.original_bytes().to_vec(),
+                                None => Vec::new(),
+                            },
                         },
                     )
                 })
@@ -37,29 +41,8 @@ impl TryFrom<UpdatedAccounts> for U8SliceView {
     }
 }
 
-// Updated Codes
-pub type UpdatedCodes = HashMap<B256, Code>;
-type Code = Vec<u8>;
-
-impl TryFrom<UpdatedCodes> for U8SliceView {
-    type Error = EncodeError;
-
-    fn try_from(value: UpdatedCodes) -> Result<Self, Self::Error> {
-        let codes = Codes {
-            codes: value
-                .into_iter()
-                .map(|(hash, code)| (hash.to_string(), code))
-                .collect(),
-        };
-        // build proto message
-        let mut buf = Vec::new();
-        let _ = codes.encode(&mut buf);
-        Ok(U8SliceView::new(Some(&buf)))
-    }
-}
-
 // Storages
-pub type UpdatedStorages = HashMap<Address, HashMap<U256, U256>>;
+pub type UpdatedStorages = AddressHashMap<HashMap<U256, U256>>;
 
 impl TryFrom<UpdatedStorages> for U8SliceView {
     type Error = EncodeError;
@@ -92,9 +75,7 @@ impl TryFrom<DeletedAccounts> for U8SliceView {
     type Error = EncodeError;
 
     fn try_from(value: DeletedAccounts) -> Result<Self, Self::Error> {
-        let deleted = Deleted {
-            deleted: value.into_iter().map(|addr| addr.to_vec()).collect(),
-        };
+        let deleted = Deleted { deleted: value.into_iter().map(|addr| addr.to_vec()).collect() };
         // build proto message
         let mut buf = Vec::new();
         deleted.encode(&mut buf).unwrap();

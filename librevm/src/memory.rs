@@ -1,7 +1,8 @@
-use std::mem;
-use std::path::Path;
-use std::path::PathBuf;
-use std::slice;
+use std::{
+    mem,
+    path::{Path, PathBuf},
+    slice,
+};
 
 use serde::Serialize;
 
@@ -9,11 +10,13 @@ use serde::Serialize;
 /// Use this for the current call only. A view cannot be copied for safety reasons.
 /// If you need a copy, use [`ByteSliceView::to_owned`].
 ///
-/// Go's nil value is fully supported, such that we can differentiate between nil and an empty slice.
+/// Go's nil value is fully supported, such that we can differentiate between nil and an empty
+/// slice.
 #[repr(C)]
 #[derive(Debug)]
 pub struct ByteSliceView {
-    /// True if and only if the byte slice is nil in Go. If this is true, the other fields must be ignored.
+    /// True if and only if the byte slice is nil in Go. If this is true, the other fields must be
+    /// ignored.
     is_nil: bool,
     ptr: *const u8,
     len: usize,
@@ -24,22 +27,14 @@ impl ByteSliceView {
     /// when testing FFI calls from Rust. It must not be used in production code.
     #[cfg(test)]
     pub fn new(source: &[u8]) -> Self {
-        Self {
-            is_nil: false,
-            ptr: source.as_ptr(),
-            len: source.len(),
-        }
+        Self { is_nil: false, ptr: source.as_ptr(), len: source.len() }
     }
 
     /// ByteSliceViews are only constructed in Go. This constructor is a way to mimic the behaviour
     /// when testing FFI calls from Rust. It must not be used in production code.
     #[cfg(test)]
     pub fn nil() -> Self {
-        Self {
-            is_nil: true,
-            ptr: std::ptr::null::<u8>(),
-            len: 0,
-        }
+        Self { is_nil: true, ptr: std::ptr::null::<u8>(), len: 0 }
     }
 
     /// Provides a reference to the included data to be parsed or copied elsewhere
@@ -68,19 +63,14 @@ impl From<ByteSliceView> for Option<String> {
 impl From<ByteSliceView> for Option<Vec<String>> {
     fn from(val: ByteSliceView) -> Self {
         val.read().map(|s| {
-            String::from_utf8(s.to_vec())
-                .unwrap()
-                .split(',')
-                .map(|o| o.to_string())
-                .collect()
+            String::from_utf8(s.to_vec()).unwrap().split(',').map(|o| o.to_string()).collect()
         })
     }
 }
 
 impl From<ByteSliceView> for Option<PathBuf> {
     fn from(val: ByteSliceView) -> Self {
-        val.read()
-            .map(|s| Path::new(&String::from_utf8(s.to_vec()).unwrap()).to_path_buf())
+        val.read().map(|s| Path::new(&String::from_utf8(s.to_vec()).unwrap()).to_path_buf())
     }
 }
 
@@ -98,16 +88,8 @@ pub struct U8SliceView {
 impl U8SliceView {
     pub fn new(source: Option<&[u8]>) -> Self {
         match source {
-            Some(data) => Self {
-                is_none: false,
-                ptr: data.as_ptr(),
-                len: data.len(),
-            },
-            None => Self {
-                is_none: true,
-                ptr: std::ptr::null::<u8>(),
-                len: 0,
-            },
+            Some(data) => Self { is_none: false, ptr: data.as_ptr(), len: data.len() },
+            None => Self { is_none: true, ptr: std::ptr::null::<u8>(), len: 0 },
         }
     }
 }
@@ -132,19 +114,19 @@ impl U8SliceView {
 ///
 /// ### Transfer ownership from Rust to Go
 ///
-/// When an `UnmanagedVector` was created in Rust using [`UnmanagedVector::new`], [`UnmanagedVector::default`]
-/// or [`new_unmanaged_vector`], it can be passted to Go as a return value.
-/// Rust then has no chance to destroy the vector anymore, so ownership is transferred to Go.
-/// In Go, the data has to be copied to a garbage collected `[]byte`. Then the vector must be destroyed
-/// using [`destroy_unmanaged_vector`].
+/// When an `UnmanagedVector` was created in Rust using [`UnmanagedVector::new`],
+/// [`UnmanagedVector::default`] or [`new_unmanaged_vector`], it can be passted to Go as a return
+/// value. Rust then has no chance to destroy the vector anymore, so ownership is transferred to Go.
+/// In Go, the data has to be copied to a garbage collected `[]byte`. Then the vector must be
+/// destroyed using [`destroy_unmanaged_vector`].
 ///
 /// ### Transfer ownership from Go to Rust
 ///
-/// When Rust code calls into Go (using the vtable methods), return data or error messages must be created
-/// in Go. This is done by calling [`new_unmanaged_vector`] from Go, which copies data into a newly created
-/// `UnmanagedVector`. Since Go created it, it owns it. The ownership is then passed to Rust via the
-/// mutable return value pointers. On the Rust side, the vector is destroyed using [`UnmanagedVector::consume`].
-///
+/// When Rust code calls into Go (using the vtable methods), return data or error messages must be
+/// created in Go. This is done by calling [`new_unmanaged_vector`] from Go, which copies data into
+/// a newly created `UnmanagedVector`. Since Go created it, it owns it. The ownership is then passed
+/// to Rust via the mutable return value pointers. On the Rust side, the vector is destroyed using
+/// [`UnmanagedVector::consume`].
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct UnmanagedVector {
@@ -172,19 +154,9 @@ impl UnmanagedVector {
                     let mut data = mem::ManuallyDrop::new(data);
                     (data.as_mut_ptr(), data.len(), data.capacity())
                 };
-                Self {
-                    is_none: false,
-                    ptr,
-                    len,
-                    cap,
-                }
+                Self { is_none: false, ptr, len, cap }
             }
-            None => Self {
-                is_none: true,
-                ptr: std::ptr::null_mut::<u8>(),
-                len: 0,
-                cap: 0,
-            },
+            None => Self { is_none: true, ptr: std::ptr::null_mut::<u8>(), len: 0, cap: 0 },
         }
     }
 
@@ -246,8 +218,8 @@ pub unsafe extern "C" fn new_unmanaged_vector(
     } else if length == 0 {
         UnmanagedVector::new(Some(Vec::new()))
     } else {
-        // In slice::from_raw_parts, `data` must be non-null and aligned even for zero-length slices.
-        // For this reason we cover the length == 0 case separately above.
+        // In slice::from_raw_parts, `data` must be non-null and aligned even for zero-length
+        // slices. For this reason we cover the length == 0 case separately above.
         let external_memory = unsafe { slice::from_raw_parts(ptr, length) };
         let copy = Vec::from(external_memory);
         UnmanagedVector::new(Some(copy))
@@ -303,7 +275,8 @@ mod test {
         // Empty data
         let x = UnmanagedVector::new(Some(vec![]));
         assert!(!x.is_none);
-        assert_eq!(x.ptr as usize, 0x01); // We probably don't get any guarantee for this, but good to know where the 0x01 marker pointer can come from
+        assert_eq!(x.ptr as usize, 0x01); // We probably don't get any guarantee for this, but good to know where the 0x01 marker
+                                          // pointer can come from
         assert_eq!(x.len, 0);
         assert_eq!(x.cap, 0);
 

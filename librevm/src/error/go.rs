@@ -12,7 +12,6 @@ use super::BackendError;
 //               update the match statement in the From conversion below.
 //               Otherwise all hell may break loose.
 //               You have been warned.
-//
 #[repr(i32)] // This makes it so the enum looks like a simple i32 to Go
 #[derive(PartialEq)]
 pub enum GoError {
@@ -23,17 +22,20 @@ pub enum GoError {
     BadArgument = 2,
     /// Error while trying to serialize data in Go code (typically json.Marshal)
     CannotSerialize = 3,
-    /// An error happened during normal operation of a Go callback, which should be fed back to the contract
+    /// An error happened during normal operation of a Go callback, which should be fed back to the
+    /// contract
     User = 4,
     /// Unimplemented
     Unimplemented = 5,
-    /// An error type that should never be created by us. It only serves as a fallback for the i32 to GoError conversion.
+    /// An error type that should never be created by us. It only serves as a fallback for the i32
+    /// to GoError conversion.
     Other = -1,
 }
 
 impl From<i32> for GoError {
     fn from(n: i32) -> Self {
-        // This conversion treats any number that is not otherwise an expected value as `GoError::Other`
+        // This conversion treats any number that is not otherwise an expected value as
+        // `GoError::Other`
         match n {
             0 => GoError::None,
             1 => GoError::Panic,
@@ -47,13 +49,14 @@ impl From<i32> for GoError {
 }
 
 impl GoError {
-    /// This converts a GoError to a `Result<(), BackendError>`, using a fallback error message for some cases.
-    /// If it is GoError::User the error message will be returned to the contract.
-    /// Otherwise, the returned error will trigger a trap in the VM and abort contract execution immediately.
+    /// This converts a GoError to a `Result<(), BackendError>`, using a fallback error message for
+    /// some cases. If it is GoError::User the error message will be returned to the contract.
+    /// Otherwise, the returned error will trigger a trap in the VM and abort contract execution
+    /// immediately.
     ///
-    /// This reads data from an externally provided `UnmanagedVector` and assumes UFT-8 encoding. To protect
-    /// against invalid UTF-8 data, a lossy conversion to string is used. The data is limited to 8KB in order
-    /// to protect against long externally generated error messages.
+    /// This reads data from an externally provided `UnmanagedVector` and assumes UFT-8 encoding. To
+    /// protect against invalid UTF-8 data, a lossy conversion to string is used. The data is
+    /// limited to 8KB in order to protect against long externally generated error messages.
     ///
     /// The `error_msg` is always consumed here and must not be used afterwards.
     #[allow(clippy::missing_safety_doc)]

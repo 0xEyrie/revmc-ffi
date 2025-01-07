@@ -10,15 +10,12 @@ message Account {
   uint64 nonce = 2;
   // Code hash.
   bytes code_hash = 3;
+  // Code Bytes
+  bytes code =4;
 }
 
 message Accounts {
     map<string, Account> accounts = 1; // address => StateAccount
-}
-
-// code_hash => bytecode
-message Codes {
-    map<string, bytes> codes = 1;
 }
 
 // key => value

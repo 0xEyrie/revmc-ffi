@@ -1,51 +1,15 @@
 use crate::{
-    compiler::{register_handler, CompileWorker, ExternalContext, SledDB},
-    error::{init_tracer, set_error},
+    error::set_error,
     memory::{ByteSliceView, UnmanagedVector},
     states::{Db, StateDB},
     types::TryIntoVec,
 };
-use alloy_primitives::B256;
-use once_cell::sync::OnceCell;
 use revm::{primitives::SpecId, Evm, EvmBuilder};
-use std::sync::{Arc, RwLock};
-
-pub static SLED_DB: OnceCell<Arc<RwLock<SledDB<B256>>>> = OnceCell::new();
-
-#[allow(non_camel_case_types)]
-#[repr(C)]
-pub struct compiler_t {}
-
-pub fn to_compiler(ptr: *mut compiler_t) -> Option<&'static mut CompileWorker> {
-    if ptr.is_null() {
-        None
-    } else {
-        let compiler = unsafe { &mut *(ptr as *mut CompileWorker) };
-        Some(compiler)
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn new_compiler(threshold: u64) -> *mut compiler_t {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    rt.block_on(async {
-        let sled_db = SLED_DB.get_or_init(|| Arc::new(RwLock::new(SledDB::init())));
-        let compiler = CompileWorker::new(threshold, Arc::clone(sled_db));
-        let compiler = Box::into_raw(Box::new(compiler));
-        compiler as *mut compiler_t
-    })
-}
-
-#[no_mangle]
-pub extern "C" fn free_compiler(compiler: *mut compiler_t) {
-    if !compiler.is_null() {
-        // this will free cache when it goes out of scope
-        let _ = unsafe { Box::from_raw(compiler as *mut CompileWorker) };
-    }
-}
+use revmc_worker::{register_handler, EXTCompileWorker};
 
 // byte slice view: golang data type
-// unamangedvector: ffi safe vector data type compliants with rust's ownership and data types, for returning optional error value
+// unamangedvector: ffi safe vector data type compliants with rust's ownership and data types, for
+// returning optional error value
 #[allow(non_camel_case_types)]
 #[repr(C)]
 pub struct evm_t {}
@@ -59,8 +23,6 @@ pub fn to_evm<'a, EXT>(ptr: *mut evm_t) -> Option<&'a mut Evm<'a, EXT, StateDB<'
     }
 }
 
-// initialize vm instance with handler
-// if aot mark is true, initialize compiler
 #[no_mangle]
 pub extern "C" fn new_vm(default_spec_id: u8) -> *mut evm_t {
     let db = Db::default();
@@ -76,23 +38,21 @@ pub extern "C" fn new_vm(default_spec_id: u8) -> *mut evm_t {
 #[no_mangle]
 pub extern "C" fn new_vm_with_compiler(
     default_spec_id: u8,
-    compiler: *mut compiler_t,
+    thershold: u64,
+    max_concurrent_size: usize,
 ) -> *mut evm_t {
     let db = Db::default();
     let state_db = StateDB::new(&db);
     let spec = SpecId::try_from_u8(default_spec_id).unwrap_or(SpecId::OSAKA);
     let builder = EvmBuilder::default();
 
-    init_tracer();
-
     let evm = {
-        let compiler = unsafe { &mut *(compiler as *mut CompileWorker) };
-        let ext = ExternalContext::new(compiler);
+        let ext = EXTCompileWorker::new(thershold, max_concurrent_size);
         builder
             .with_db(state_db)
             .with_spec_id(spec)
-            .with_external_context::<ExternalContext>(ext)
-            .append_handler_register(register_handler)
+            .with_external_context::<EXTCompileWorker>(ext)
+            .append_handler_register(register_handler::<StateDB>)
             .build()
     };
 
@@ -105,7 +65,7 @@ pub extern "C" fn free_vm(vm: *mut evm_t, aot: bool) {
     if !vm.is_null() {
         // this will free cache when it goes out of scope
         if aot {
-            let _ = unsafe { Box::from_raw(vm as *mut Evm<ExternalContext, StateDB>) };
+            let _ = unsafe { Box::from_raw(vm as *mut Evm<EXTCompileWorker, StateDB>) };
         } else {
             let _ = unsafe { Box::from_raw(vm as *mut Evm<(), StateDB>) };
         }
@@ -122,7 +82,7 @@ pub extern "C" fn execute_tx(
     errmsg: Option<&mut UnmanagedVector>,
 ) -> UnmanagedVector {
     let data = if aot {
-        execute::<ExternalContext>(vm_ptr, db, block, tx, errmsg)
+        execute::<EXTCompileWorker>(vm_ptr, db, block, tx, errmsg)
     } else {
         execute::<()>(vm_ptr, db, block, tx, errmsg)
     };
@@ -140,7 +100,7 @@ pub extern "C" fn simulate_tx(
     errmsg: Option<&mut UnmanagedVector>,
 ) -> UnmanagedVector {
     let data = if aot {
-        simulate::<ExternalContext>(vm_ptr, db, block, tx, errmsg)
+        simulate::<EXTCompileWorker>(vm_ptr, db, block, tx, errmsg)
     } else {
         simulate::<()>(vm_ptr, db, block, tx, errmsg)
     };

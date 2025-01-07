@@ -1,4 +1,4 @@
-package revmffi_test
+package vmffi_test
 
 import (
 	"math/big"

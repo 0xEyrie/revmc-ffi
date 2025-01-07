@@ -9,8 +9,8 @@ pub struct db_t {
     _private: [u8; 0],
 }
 
-// These functions should return GoError but because we don't trust them here, we treat the return value as i32
-// and then check it when converting to GoError manually
+// These functions should return GoError but because we don't trust them here, we treat the return
+// value as i32 and then check it when converting to GoError manually
 // https://github.com/ethereum/go-ethereum/blob/08e6bdb550712503873fb2a138b30132cc36c481/core/vm/interface.go#L32
 #[repr(C)]
 #[allow(non_camel_case_types)]
@@ -19,17 +19,21 @@ pub struct Db_vtable {
     ///
     /// # Parameters
     /// - `db_t`: A mutable pointer to the database.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the codes will be stored.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the storages will be stored.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the accounts will be stored.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the deleted accounts will be stored.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will be stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the codes will be
+    ///   stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the storages will be
+    ///   stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the accounts will be
+    ///   stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the deleted accounts
+    ///   will be stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will
+    ///   be stored.
     ///
     /// # Returns
     /// - `i32`: Status code indicating success or failure.
     pub commit: extern "C" fn(
         *mut db_t,
-        U8SliceView,          // codes
         U8SliceView,          // storages
         U8SliceView,          // accounts
         U8SliceView,          // deleted accounts and storages
@@ -41,8 +45,10 @@ pub struct Db_vtable {
     /// # Parameters
     /// - `db_t`: A mutable pointer to the database.
     /// - `U8SliceView`: The address for which the account is being retrieved.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be stored.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will be stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be
+    ///   stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will
+    ///   be stored.
     ///
     /// # Returns
     /// - `i32`: Status code indicating success or failure.
@@ -58,8 +64,10 @@ pub struct Db_vtable {
     /// # Parameters
     /// - `db_t`: A mutable pointer to the database.
     /// - `U8SliceView`: The code hash for which the code is being retrieved.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be stored.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will be stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be
+    ///   stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will
+    ///   be stored.
     ///
     /// # Returns
     /// - `i32`: Status code indicating success or failure.
@@ -76,8 +84,10 @@ pub struct Db_vtable {
     /// - `db_t`: A mutable pointer to the database.
     /// - `U8SliceView`: The address for which the storage is being retrieved.
     /// - `U8SliceView`: The key for which the storage is being retrieved.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be stored.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will be stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be
+    ///   stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will
+    ///   be stored.
     ///
     /// # Returns
     /// - `i32`: Status code indicating success or failure.
@@ -94,8 +104,10 @@ pub struct Db_vtable {
     /// # Parameters
     /// - `db_t`: A mutable pointer to the database.
     /// - `u64`: The block number for which the block hash is being retrieved.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be stored.
-    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will be stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where the result will be
+    ///   stored.
+    /// - `UnmanagedVector`: A mutable pointer to an unmanaged vector where any error message will
+    ///   be stored.
     ///
     /// # Returns
     /// - `i32`: Status code indicating success or failure.
@@ -128,16 +140,12 @@ impl Default for Db {
             get_block_hash: default_read_db3,
         };
 
-        Db {
-            state: _state,
-            vtable: _vtable,
-        }
+        Db { state: _state, vtable: _vtable }
     }
 }
 
 extern "C" fn default_write_db(
     _: *mut db_t,
-    _: U8SliceView,
     _: U8SliceView,
     _: U8SliceView,
     _: U8SliceView,

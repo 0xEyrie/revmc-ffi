@@ -38,7 +38,7 @@ impl From<TransactionProto> for TxEnv {
             caller: Address::from_slice(&transaction.caller),
             gas_limit: transaction.gas_limit,
             gas_price: U256::from_be_slice(&transaction.gas_price),
-            nonce: Some(transaction.nonce),
+            nonce: transaction.nonce,
             transact_to: match transact_to {
                 Address::ZERO => TxKind::Create,
                 _ => TxKind::Call(transact_to),
@@ -129,8 +129,6 @@ impl TryFrom<ByteSliceView> for TxEnv {
     type Error = DecodeError;
     fn try_from(value: ByteSliceView) -> Result<Self, Self::Error> {
         let tx_bytes = value.read().unwrap();
-        Ok(TxEnv::from(TransactionProto::from(
-            Transaction::decode(tx_bytes).unwrap(),
-        )))
+        Ok(TxEnv::from(TransactionProto::from(Transaction::decode(tx_bytes).unwrap())))
     }
 }

@@ -145,7 +145,7 @@ typedef struct {
    * # Returns
    * - `i32`: Status code indicating success or failure.
    */
-  int32_t (*commit)(db_t*, U8SliceView, U8SliceView, U8SliceView, UnmanagedVector*);
+  int32_t (*commit)(db_t*, U8SliceView, U8SliceView, U8SliceView, U8SliceView, UnmanagedVector*);
   /**
    * Retrieves the account for a given address.
    *

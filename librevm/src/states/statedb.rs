@@ -1,10 +1,14 @@
 use alloy_primitives::{Address, BlockHash, Bytes, B256, U256};
-use revm::primitives::{Account, AccountInfo, Bytecode, HashMap};
-use revm::{Database, DatabaseCommit};
+use revm::{
+    primitives::{Account, AccountInfo, Bytecode, HashMap},
+    Database, DatabaseCommit,
+};
 
-use crate::error::{BackendError, GoError};
-use crate::memory::{U8SliceView, UnmanagedVector};
-use crate::types::{DeletedAccounts, UpdatedAccounts, UpdatedCodes, UpdatedStorages};
+use crate::{
+    error::{BackendError, GoError},
+    memory::{U8SliceView, UnmanagedVector},
+    types::{DeletedAccounts, UpdatedAccounts, UpdatedStorages},
+};
 
 use super::vtable::Db;
 
@@ -18,7 +22,7 @@ impl<'r> StateDB<'r> {
     }
 }
 
-impl<'db> Database for StateDB<'db> {
+impl Database for StateDB<'_> {
     type Error = BackendError;
 
     #[doc = " Get basic account information."]
@@ -33,9 +37,8 @@ impl<'db> Database for StateDB<'db> {
         )
         .into();
         unsafe {
-            go_error.into_result(error_msg, || {
-                "Failed to get account info from the db".to_owned()
-            })?;
+            go_error
+                .into_result(error_msg, || "Failed to get account info from the db".to_owned())?;
         }
         let account_info: AccountInfo = output.try_into().unwrap();
         Ok(Some(account_info))
@@ -93,9 +96,8 @@ impl<'db> Database for StateDB<'db> {
         .into();
 
         unsafe {
-            go_error.into_result(error_msg, || {
-                "Failed to get block hash from the db".to_owned()
-            })?;
+            go_error
+                .into_result(error_msg, || "Failed to get block hash from the db".to_owned())?;
         }
 
         let block_hash = BlockHash::from_slice(&output.consume().unwrap());
@@ -103,13 +105,12 @@ impl<'db> Database for StateDB<'db> {
     }
 }
 
-impl<'a> DatabaseCommit for StateDB<'a> {
+impl DatabaseCommit for StateDB<'_> {
     #[doc = " Commit changes to the database."]
     fn commit(&mut self, changes: HashMap<Address, Account>) {
-        let mut updated_codes: UpdatedCodes = HashMap::new();
-        let mut updated_storages: UpdatedStorages = HashMap::new();
-        let mut updated_accounts: UpdatedAccounts = HashMap::new();
-        let mut deleted_accounts: DeletedAccounts = Vec::new();
+        let mut updated_storages: UpdatedStorages = HashMap::default();
+        let mut updated_accounts: UpdatedAccounts = HashMap::default();
+        let mut deleted_accounts: DeletedAccounts = Vec::default();
 
         for (address, account) in changes {
             if !account.is_touched() {
@@ -120,26 +121,15 @@ impl<'a> DatabaseCommit for StateDB<'a> {
                 deleted_accounts.push(address);
                 continue;
             }
-            let is_newly_created = account.is_created();
-            // Update Codes
-            if is_newly_created && !account.info.is_empty_code_hash() {
-                updated_codes.insert(
-                    account.info.code_hash,
-                    account
-                        .info
-                        .code
-                        .clone()
-                        .unwrap()
-                        .original_byte_slice()
-                        .to_vec(),
-                );
+            let mut info = account.clone().info;
+            if info.code.is_none() {
+                info.code = Some(self.code_by_hash(info.code_hash).unwrap());
             }
-
             // Update Accounts
-            updated_accounts.insert(address, account.clone().info.copy_without_code());
+            updated_accounts.insert(address, info);
 
             // Update Storages
-            let mut updated_storages_by_address = HashMap::new();
+            let mut updated_storages_by_address = HashMap::default();
             for (key, evm_storage_slot) in account.storage {
                 if evm_storage_slot.original_value != evm_storage_slot.present_value {
                     updated_storages_by_address.insert(key, evm_storage_slot.present_value);
@@ -147,11 +137,10 @@ impl<'a> DatabaseCommit for StateDB<'a> {
             }
             updated_storages.insert(address, updated_storages_by_address);
         }
-        // Commited by ffi call in state database
+        // Commited by ffi call in extended state database
         let mut error_msg = UnmanagedVector::default();
         let go_error: GoError = (self.db.vtable.commit)(
             self.db.state,
-            updated_codes.try_into().unwrap(),
             updated_storages.try_into().unwrap(),
             updated_accounts.try_into().unwrap(),
             deleted_accounts.try_into().unwrap(),
@@ -160,9 +149,8 @@ impl<'a> DatabaseCommit for StateDB<'a> {
         .into();
 
         unsafe {
-            let _ = go_error.into_result(error_msg, || {
-                "Failed to commit changes in the state db".to_owned()
-            });
+            let _ = go_error
+                .into_result(error_msg, || "Failed to commit changes in the state db".to_owned());
         }
     }
 }
