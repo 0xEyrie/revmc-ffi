@@ -1,6 +1,6 @@
 # Versioned by a simple counter that is not bound to a specific CosmWasm version
 # See builders/README.md
-BUILDERS_PREFIX := rethmint/librevm-builder:0001
+BUILDERS_PREFIX := 0xeyrie/librevm-builder:0001
 
 .PHONY: docker-image-debian
 docker-image-debian:

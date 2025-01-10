@@ -1,7 +1,8 @@
 #!/bin/bash
 set -o errexit -o nounset -o pipefail
 mkdir -p artifacts
-
+prefix=$(llvm-config-18 --prefix)
+export LLVM_SYS_180_PREFIX=$prefix
 export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 export DYLD_LIBRARY_PATH="./api"
 

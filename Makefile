@@ -2,9 +2,8 @@
 
 AOT_STORE_PATH := $(HOME)/.aotstore
 # Builds the Rust library librevm
-BUILDERS_PREFIX := rethmint/librevm-builder:0001
-BENCHMARK_PREFIX := rethmint/benchmark:0001
-CONTRACTS_DIR = ./contracts
+BUILDERS_PREFIX := 0xeyrie/librevm-builder:0001
+BENCHMARK_PREFIX := 0xeyrie/benchmark:0001
 USER_ID := $(shell id -u)
 USER_GROUP = $(shell id -g)
 
@@ -27,7 +26,7 @@ endif
 # lint (macos)
 lint:
 	@export LLVM_SYS_180_PREFIX=$(shell brew --prefix llvm@18);\
-	cargo fix --allow-staged
+	cargo fix --allow-dirty --allow-staged
 	@export LLVM_SYS_180_PREFIX=$(shell brew --prefix llvm@18);\
 	cargo clippy --workspace --all-targets --all-features -- -D warnings
 	make fmt
@@ -37,7 +36,7 @@ fmt:
 	go fmt
 
 update-bindings:
-	cp librevm/bindings.h core/revm
+	cp librevm/bindings.h core/vm
 
 test:
 	make build-rust-debug
@@ -62,7 +61,7 @@ build-rust-debug:
 	export LD_LIBRARY_PATH="/opt/homebrew/lib:$LD_LIBRARY_PATH";\
 	export RUST_BACKTRACE=full; \
 	cargo build
-	@cp -fp target/debug/$(SHARED_LIB_SRC) core/revm/$(SHARED_LIB_DST)
+	@cp -fp target/debug/$(SHARED_LIB_SRC) core/vm/$(SHARED_LIB_DST)
 	@make update-bindings
 
 build-rust-release:
@@ -70,24 +69,23 @@ build-rust-release:
 	export LIBRARY_PATH="/opt/homebrew/lib:$LIBRARY_PATH";\
 	export LD_LIBRARY_PATH="/opt/homebrew/lib:$LD_LIBRARY_PATH";\
 	cargo build --release
-	rm -f core/revm/$(SHARED_LIB_DST)
-	cp -fp target/release/$(SHARED_LIB_SRC) core/revm/$(SHARED_LIB_DST)
+	rm -f core/vm/$(SHARED_LIB_DST)
+	cp -fp target/release/$(SHARED_LIB_SRC) core/vm/$(SHARED_LIB_DST)
 	make update-bindings
-	@ #this pulls out ELF symbols, 80% size reduction!
 
 clean:
 	cargo clean
-	@-rm core/revm/bindings.h
+	@-rm core/vm/bindings.h
 	@-rm librevm/bindings.h
-	@-rm core/revm/$(SHARED_LIB_DST)
+	@-rm core/vm/$(SHARED_LIB_DST)
 	@echo cleaned.
 
 # Creates a release build in a containerized build environment of the shared library for glibc Linux (.so)
 release-build-linux:
 	docker run --rm -v $(shell pwd):/code/ $(BUILDERS_PREFIX)-debian build_gnu_x86_64.sh
 	docker run --rm -v $(shell pwd):/code/ $(BUILDERS_PREFIX)-debian build_gnu_aarch64.sh
-	cp artifacts/librevmapi.x86_64.so core
-	cp artifacts/librevmapi.aarch64.so core
+	cp artifacts/librevmapi.x86_64.so core/vm
+	cp artifacts/librevmapi.aarch64.so core/vm
 	make update-bindings
 
 # Creates a release build in a containerized build environment of the shared library for macOS (.dylib)
@@ -97,7 +95,7 @@ release-build-macos:
 	docker run --rm -u $(USER_ID):$(USER_GROUP) \
 		-v $(shell pwd):/code/ \
 		$(BUILDERS_PREFIX)-cross build_macos.sh
-	cp artifacts/librevmapi.dylib core
+	cp artifacts/librevmapi.dylib core/vm
 	make update-bindings
 
 release-build:
@@ -107,12 +105,8 @@ release-build:
 
 protobuf-gen:
 	@bash ./scripts/protobufgen.sh
-	
-contracts-gen:
-	@bash ./scripts/contractsgen.sh
 
-
-BENCHMARK_PREFIX := rethmint/benchmark:0001
+BENCHMARK_PREFIX := 0xeyrie/benchmark:0001
 
 .PHONY: docker-image-gevm
 docker-image-gevm:

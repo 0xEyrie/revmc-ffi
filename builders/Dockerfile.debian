@@ -3,6 +3,9 @@
 # Debian 11 "Bullseye" has long-term support until August 31st, 2026
 FROM --platform=linux/amd64 debian:11-slim
 
+RUN echo "deb http://apt.llvm.org/buster/ lvm-toolchain-bullseye-18 main" >> /etc/apt/sources.list.d/llvm.list \
+  && echo "deb-src http://apt.llvm.org/buster/ lvm-toolchain-bullseye-18 main" >> /etc/apt/sources.list.d/llvm.list 
+
 RUN apt update -y \
   && apt install -y clang gcc make gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu wget llvm \
   && rm -rf /var/lib/apt/lists/*
@@ -23,8 +26,7 @@ RUN wget --no-verbose "https://static.rust-lang.org/rustup/dist/x86_64-unknown-l
   && chmod -R 777 /usr/local/cargo \
   && rustup target add aarch64-unknown-linux-gnu
 
-## COPY BUILD SCRIPTS
-
+  
 WORKDIR /code
 
 COPY guest/*.sh /usr/local/bin/

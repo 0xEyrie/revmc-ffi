@@ -63,12 +63,12 @@ func (evm *EVM) Execute(
 		// ignore the opereation times out error
 		errno, ok := err.(syscall.Errno)
 		if ok && errno == syscall.ETIMEDOUT || errno == syscall.ENOENT {
-			return unmarshalEvmResult(res)
+			return unmarshalResult(res)
 		}
 		return &types.EvmResult{}, errorWithMessage(err, errmsg)
 	}
 
-	return unmarshalEvmResult(res)
+	return unmarshalResult(res)
 }
 
 // `Simulate` simulates a transaction on the VM
@@ -91,16 +91,16 @@ func (evm *EVM) simulate(
 		// ignore the operation timed out error
 		errno, ok := err.(syscall.Errno)
 		if ok && errno == syscall.ETIMEDOUT || errno == syscall.ENOENT {
-			return unmarshalEvmResult(res)
+			return unmarshalResult(res)
 		}
 		return &types.EvmResult{}, errorWithMessage(err, errmsg)
 	}
 
-	return unmarshalEvmResult(res)
+	return unmarshalResult(res)
 }
 
-// unmarshalEvmResult decodes the EVM result from the unmanaged vector
-func unmarshalEvmResult(res C.UnmanagedVector) (*types.EvmResult, error) {
+// unmarshalResult decodes the EVM result from the unmanaged vector
+func unmarshalResult(res C.UnmanagedVector) (*types.EvmResult, error) {
 	vec := copyAndDestroyUnmanagedVector(res)
 	var result types.EvmResult
 	err := proto.Unmarshal(vec, &result)

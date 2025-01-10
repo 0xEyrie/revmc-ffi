@@ -71,10 +71,6 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: ${{ runner.os }}-cargo-
       
-      - name: Rustfmt
-        run: |
-          cargo fmt --all
-
       - name: Clippy
         run: cargo clippy --workspace --all-targets
         env:
