@@ -3,8 +3,12 @@
 # Debian 11 "Bullseye" has long-term support until August 31st, 2026
 FROM --platform=linux/amd64 debian:11-slim
 
-RUN echo "deb http://apt.llvm.org/buster/ lvm-toolchain-bullseye-18 main" >> /etc/apt/sources.list.d/llvm.list \
-  && echo "deb-src http://apt.llvm.org/buster/ lvm-toolchain-bullseye-18 main" >> /etc/apt/sources.list.d/llvm.list 
+RUN apt-get update -y \
+  && apt-get install -y wget gnupg \
+  && wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /usr/share/keyrings/llvm-archive-keyring.gpg \
+  && echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-18 main" > /etc/apt/sources.list.d/llvm.list \
+  && echo "deb-src [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-18 main" >> /etc/apt/sources.list.d/llvm.list
+
 
 RUN apt update -y \
   && apt install -y clang gcc make gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu wget llvm \
