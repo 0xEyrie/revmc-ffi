@@ -1,2 +1,2 @@
 **/doc/*
-core/librevmapi.dylib filter=lfs diff=lfs merge=lfs -text
+core/vm/librevmapi.dylib filter=lfs diff=lfs merge=lfs -text

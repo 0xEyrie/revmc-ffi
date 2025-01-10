@@ -12,7 +12,7 @@ on:
       - "builders/*"
   pull_request:
     branches:
-      - "release/*"
+      - "release/test"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: librevmapi-linux-glibc
-          path: core/*.so
+          path: core/vm/*.so
 
   build-macos:
     name: MacOS glibc
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: librevmapi-macos
-          path: core/*.dylib
+          path: core/vm/*.dylib
 
   commit:
     name: Commit shared libraries
