@@ -3,7 +3,6 @@
 AOT_STORE_PATH := $(HOME)/.aotstore
 # Builds the Rust library librevm
 BUILDERS_PREFIX := 0xeyrie/librevm-builder:0001
-BENCHMARK_PREFIX := 0xeyrie/benchmark:0001
 USER_ID := $(shell id -u)
 USER_GROUP = $(shell id -g)
 

@@ -3,16 +3,18 @@
 # Debian 11 "Bullseye" has long-term support until August 31st, 2026
 FROM --platform=linux/amd64 debian:11-slim
 
+# Install essential tools and set up LLVM repository
 RUN apt-get update -y \
-  && apt-get install -y wget gnupg \
+  && apt-get install -y wget gnupg software-properties-common \
   && wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /usr/share/keyrings/llvm-archive-keyring.gpg \
   && echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-18 main" > /etc/apt/sources.list.d/llvm.list \
-  && echo "deb-src [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-18 main" >> /etc/apt/sources.list.d/llvm.list
-
-
-RUN apt update -y \
-  && apt install -y clang gcc make gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu wget llvm \
+  && apt-get update -y \
+  && apt-get install -y clang llvm llvm-18 llvm-18-tools gcc make gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
   && rm -rf /var/lib/apt/lists/*
+
+# Verify llvm-config is installed and accessible
+RUN ln -s /usr/lib/llvm-18/bin/llvm-config /usr/local/bin/llvm-config \
+  && llvm-config --version
 
 # GET FROM https://github.com/rust-lang/docker-rust-nightly
 ENV RUSTUP_HOME=/usr/local/rustup \

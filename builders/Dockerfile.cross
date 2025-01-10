@@ -9,7 +9,11 @@ RUN apt-get update \
 # Install LLVM 18
 RUN wget https://apt.llvm.org/llvm.sh \
   && chmod +x llvm.sh \
-  && ./llvm.sh 18
+  && ./llvm.sh 18 \
+  && ln -s /usr/lib/llvm-18/bin/llvm-config /usr/local/bin/llvm-config
+
+# Verify llvm-config is correctly installed
+RUN llvm-config --version
 
 # Add macOS and Windows Rust targets
 RUN rustup target add x86_64-apple-darwin aarch64-apple-darwin x86_64-pc-windows-gnu
