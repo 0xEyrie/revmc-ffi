@@ -5,11 +5,14 @@ on:
     branches:
       - main
       - "release/*"
-      - "builders/*"
     paths:
       - "crates/**"
       - "librevm/**"
       - "Cargo.toml"
+      - "builders/*"
+  pull_request:
+    branches:
+      - "release/test"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
