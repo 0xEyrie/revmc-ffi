@@ -3,8 +3,12 @@ set -o errexit -o nounset -o pipefail
 # create artifacts directory
 mkdir -p artifacts
 
+prefix=$(llvm-config --prefix)
+export LLVM_SYS_180_PREFIX=$prefix
+echo "Prefix"
+echo $LLVM_SYS_180_PREFIX
 export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
-export DYLD_LIBRARY_PATH="./api"
+export DYLD_LIBRARY_PATH="./core/vm"
 # ref: https://wapl.es/rust/2019/02/17/rust-cross-compile-linux-to-macos.html
 export PATH="/opt/osxcross/target/bin:$PATH"
 export LIBZ_SYS_STATIC=1

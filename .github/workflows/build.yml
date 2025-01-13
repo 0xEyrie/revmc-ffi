@@ -9,6 +9,10 @@ on:
       - "crates/**"
       - "librevm/**"
       - "Cargo.toml"
+      - "builders/*"
+  pull_request:
+    branches:
+      - "release/test"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -27,7 +31,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: librevmapi-linux-glibc
-          path: core/*.so
+          path: core/vm/*.so
 
   build-macos:
     name: MacOS glibc
@@ -41,7 +45,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: librevmapi-macos
-          path: core/*.dylib
+          path: core/vm/*.dylib
 
   commit:
     name: Commit shared libraries
@@ -68,6 +72,6 @@ jobs:
       - name: Commit shared libraries
         uses: EndBug/add-and-commit@v9
         with:
-          add: '["core/librevmapi.dylib", "core/librevmapi.aarch64.so", "core/librevmapi.x86_64.so" ]'
+          add:  '["core/vm/librevmapi.dylib", "core/vm/librevmapi.aarch64.so", "core/vm/librevmapi.x86_64.so" ]'  
           default_author: github_actions
           message: "update shared libraries"
