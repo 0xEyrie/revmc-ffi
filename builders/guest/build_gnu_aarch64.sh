@@ -3,6 +3,7 @@ set -o errexit -o nounset -o pipefail
 mkdir -p artifacts
 prefix=$(llvm-config --prefix)
 export LLVM_SYS_180_PREFIX=$prefix
+echo $LLVM_SYS_180_PREFIX
 export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 export DYLD_LIBRARY_PATH="./core/vm"
